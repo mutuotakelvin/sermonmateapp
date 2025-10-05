@@ -1,36 +1,45 @@
-import { generateSermon } from "@/lib/gemini"
-import type { Sermon } from "@/lib/types"
-import { useState } from "react"
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { generateSermon } from "@/lib/gemini";
+import type { Sermon } from "@/lib/types";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function SermonScreen() {
-  const [topic, setTopic] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [sermon, setSermon] = useState<Sermon | null>(null)
+  const { topic: initialTopic } = useLocalSearchParams<{ topic?: string }>();
+  const [topic, setTopic] = useState(initialTopic ? String(initialTopic) : "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sermon, setSermon] = useState<Sermon | null>(null);
 
-  async function onGenerate() {
-    const trimmed = topic.trim()
+  async function runGenerate(subject: string) {
+    const trimmed = subject.trim();
     if (!trimmed) {
-      setError("Please enter a topic.")
-      return
+      setError("Please enter a topic.");
+      return;
     }
-    setError(null)
-    setLoading(true)
-    setSermon(null)
+    setError(null);
+    setLoading(true);
+    setSermon(null);
     try {
-      const result = await generateSermon(trimmed)
-      setSermon(result)
+      const result = await generateSermon(trimmed);
+      setSermon(result);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unexpected error"
-      setError(message)
+      const message = e instanceof Error ? e.message : "Unexpected error";
+      setError(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
+  useEffect(() => {
+    if (initialTopic) {
+      void runGenerate(String(initialTopic));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTopic]);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic">
       <View style={styles.card}>
         <Text style={styles.title}>AI Bible Sermon Generator</Text>
         <Text style={styles.subtitle}>Find biblical wisdom for any topic or feeling.</Text>
@@ -45,10 +54,10 @@ export default function SermonScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="done"
-            onSubmitEditing={() => { if (!loading) { onGenerate() } }}
+            onSubmitEditing={() => { if (!loading) { void runGenerate(topic); } }}
           />
           <Pressable
-            onPress={onGenerate}
+            onPress={() => void runGenerate(topic)}
             disabled={loading}
             style={({ pressed }) => [styles.button, (pressed || loading) && styles.buttonDisabled]}
           >
@@ -82,7 +91,7 @@ export default function SermonScreen() {
         </View>
       )}
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -171,6 +180,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#111827",
   },
-})
+});
+
+
 
 
