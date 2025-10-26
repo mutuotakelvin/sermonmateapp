@@ -1,12 +1,12 @@
 import { colors } from "@/utils/colors";
-import { useUser } from "@clerk/clerk-expo";
+import { useAuthStore } from "@/lib/stores/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function Home() {
-  const { user } = useUser();
+  const { user } = useAuthStore();
   const router = useRouter();
   const [topic, setTopic] = useState("");
 
@@ -27,7 +27,7 @@ export default function Home() {
           style={{ height: HEADER_HEIGHT, justifyContent: "center" }}
         >
           <View style={{ alignItems: "center", gap: 8 }}>
-            <Text style={styles.heroGreeting}>Hi {user?.firstName ?? "there"} 👋</Text>
+            <Text style={styles.heroGreeting}>Hi {user?.name?.split(' ')[0] ?? "there"} 👋</Text>
             <Text style={styles.heroSubtitle}>Let’s prepare something meaningful today</Text>
           </View>
         </LinearGradient>
