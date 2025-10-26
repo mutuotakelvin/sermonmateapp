@@ -1,10 +1,9 @@
-import { appwriteConfig, database } from '@/utils/appwrite'
 import { ConversationResponse } from '@/utils/types'
-import { useUser } from '@clerk/clerk-expo'
+import { useAuthStore } from '@/lib/stores/auth'
+import apiClient from '@/lib/api'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
-import { ID } from 'react-native-appwrite'
+import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '../Button'
 import Gradient from '../gradient'
@@ -12,7 +11,7 @@ import Gradient from '../gradient'
 export default function SummaryScreen() {
     const { conversationId } = useLocalSearchParams()
     const [ conversation, setConversation ] = useState<ConversationResponse>()
-    const { user } = useUser();
+    const { user } = useAuthStore();
     const [ isSaving, setIsSaving ] = useState(false);
 
     const router = useRouter();
@@ -35,19 +34,28 @@ export default function SummaryScreen() {
     async function saveAndContinue() {
         try {
             setIsSaving(true);
-            await database.createDocument(appwriteConfig.db, appwriteConfig.table.session, ID.unique(), {
-                userId: user?.id,
-                convId: conversationId,
-                status: conversation?.status,
-                tokens: conversation?.metadata.cost,
-                callDurationSecs: conversation?.metadata.call_duration_secs,
-                callSummaryTitle: conversation?.analysis.call_summary_title,
-                transcript: conversation?.transcript.map((t) => t.message).join('\n'),
+            
+            // Save session to Laravel backend
+            const response = await apiClient.post('/sessions', {
+                session_type: conversation?.analysis?.call_summary_title || 'AI Conversation',
+                conversation_history: conversation?.transcript || [],
+                duration_seconds: conversation?.metadata?.call_duration_secs || 0,
             });
 
-            router.dismissAll();
-        } catch (error) {
+            if (response.data.success) {
+                // End the session to deduct credits
+                await apiClient.post(`/sessions/${response.data.session.id}/end`, {
+                    duration_seconds: conversation?.metadata?.call_duration_secs || 0,
+                    conversation_history: conversation?.transcript || [],
+                });
+
+                router.dismissAll();
+            } else {
+                Alert.alert('Error', 'Failed to save session');
+            }
+        } catch (error: any) {
             console.error('Error saving and continuing:', error);
+            Alert.alert('Error', error.response?.data?.message || 'Failed to save session');
         } finally {
             setIsSaving(false);
         }

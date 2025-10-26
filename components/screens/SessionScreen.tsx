@@ -1,5 +1,5 @@
 import { sessions } from '@/utils/sessions';
-import { useUser } from '@clerk/clerk-expo';
+import { useAuthStore } from '@/lib/stores/auth';
 import { useConversation } from '@elevenlabs/react-native';
 import * as Brightness from 'expo-brightness';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -9,7 +9,7 @@ import Button from '../Button';
 import Gradient from '../gradient';
 
 export default function SessionScreen() {
-    const { user } = useUser();
+    const { user } = useAuthStore();
     const { sessionId } = useLocalSearchParams()
     const router = useRouter();
 
