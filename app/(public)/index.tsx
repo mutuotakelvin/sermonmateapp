@@ -1,8 +1,5 @@
-import SignIn from "@/components/clerk/SignIn";
-import { useAuth } from "@clerk/clerk-expo";
+import { Redirect } from 'expo-router';
 
 export default function Index() {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  return <SignIn scheme="aipreacher" signUpUrl="(protected)" homeUrl="(protected)" />
+  return <Redirect href="/login" />;
 }

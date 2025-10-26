@@ -13,40 +13,28 @@ import {
 import { Link, router } from 'expo-router';
 import { useAuthStore } from '@/lib/stores/auth';
 
-export default function RegisterScreen() {
-  const [name, setName] = useState('');
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register } = useAuthStore();
+  const { login } = useAuthStore();
 
-  const handleRegister = async () => {
-    if (!name || !email || !password || !passwordConfirmation) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (password !== passwordConfirmation) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
       return;
     }
 
     setIsLoading(true);
     
     try {
-      const result = await register(name, email, password, passwordConfirmation);
+      const result = await login(email, password);
       
       if (result.success) {
         router.replace('/(protected)');
       } else {
-        Alert.alert('Registration Failed', result.message || 'Registration failed');
+        Alert.alert('Login Failed', result.message || 'Invalid credentials');
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
@@ -62,21 +50,10 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join SermonMate and start your journey</Text>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to your SermonMate account</Text>
 
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter your full name"
-                autoCapitalize="words"
-              />
-            </View>
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -102,34 +79,22 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                value={passwordConfirmation}
-                onChangeText={setPasswordConfirmation}
-                placeholder="Confirm your password"
-                secureTextEntry
-                autoCapitalize="none"
-              />
-            </View>
-
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleRegister}
+              onPress={handleLogin}
               disabled={isLoading}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? 'Signing In...' : 'Sign In'}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/login" asChild>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Link href="/sign-up" asChild>
               <TouchableOpacity>
-                <Text style={styles.linkText}>Sign In</Text>
+                <Text style={styles.linkText}>Sign Up</Text>
               </TouchableOpacity>
             </Link>
           </View>
