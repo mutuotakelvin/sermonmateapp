@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '../Button'
-import Gradient from '../gradient'
+// import Gradient from '../gradient' // Temporarily disabled - Skia not needed
 
 export default function SummaryScreen() {
     const { conversationId } = useLocalSearchParams()
@@ -63,7 +63,7 @@ export default function SummaryScreen() {
 
   return (
     <SafeAreaView>
-    <Gradient position="bottom" isSpeaking={false} />
+    {/* <Gradient position="bottom" isSpeaking={false} /> */}
     <ScrollView
         contentInsetAdjustmentBehavior='automatic'
         contentContainerStyle={{ paddingHorizontal: 16 }}
