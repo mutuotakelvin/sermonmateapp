@@ -162,25 +162,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  cardSession: {
-    width: 220,
-    height: 130,
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#e5e7eb",
-  },
-  cardSessionImage: {
-    width: "100%",
-    height: "100%",
-  },
-  cardSessionTitle: {
-    position: "absolute",
-    bottom: 12,
-    width: "100%",
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "700",
-  },
   quickActions: {
     paddingHorizontal: 16,
     paddingTop: 16,

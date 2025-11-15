@@ -14,15 +14,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="coach/index"
-        options={{
-          title: "Sessions",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="film-outline" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="sermon/index"
         options={{
           title: "Sermon",
