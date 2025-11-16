@@ -1,5 +1,11 @@
-import { Redirect } from 'expo-router';
+import { Stack } from 'expo-router';
 
 export default function RootLayout() {
-  return <Redirect href="/login" />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(public)" options={{ headerShown: false }} />
+      <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+    </Stack>
+  );
 }
