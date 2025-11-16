@@ -61,7 +61,7 @@ function mapBackendToSavedSermon(sermon: BackendSermon): SavedSermon {
  */
 export async function getSermons(): Promise<SavedSermon[]> {
   try {
-    const response = await apiClient.get<SermonsResponse>('/v1/sermons');
+    const response = await apiClient.get<SermonsResponse>('/sermons');
     
     if (response.data.success && response.data.sermons.data) {
       return response.data.sermons.data.map(mapBackendToSavedSermon);
@@ -77,16 +77,21 @@ export async function getSermons(): Promise<SavedSermon[]> {
 /**
  * Save a new sermon
  */
-export async function saveSermon(sermon: Omit<SavedSermon, 'id' | 'date'>): Promise<SavedSermon> {
+export async function saveSermon(sermon: Omit<SavedSermon, 'id' | 'date'> & { topic?: string }): Promise<SavedSermon> {
   try {
-    const response = await apiClient.post<SermonResponse>('/v1/sermons', {
+    const payload = {
       title: sermon.title,
-      verses: sermon.verses,
-      interpretation: sermon.interpretation,
-      story: sermon.story,
+      verses: sermon.verses || [],
+      interpretation: sermon.interpretation || '',
+      story: sermon.story || '',
       color: sermon.color || '1',
       is_public: false, // Default to false, can be updated later
-    });
+      ...(sermon.topic && { topic: sermon.topic }),
+    };
+
+    console.log('Saving sermon with payload:', JSON.stringify(payload, null, 2));
+
+    const response = await apiClient.post<SermonResponse>('/sermons', payload);
 
     if (response.data.success) {
       return mapBackendToSavedSermon(response.data.sermon);
@@ -95,6 +100,11 @@ export async function saveSermon(sermon: Omit<SavedSermon, 'id' | 'date'>): Prom
     throw new Error('Failed to save sermon');
   } catch (error: any) {
     console.error('Error saving sermon:', error);
+    console.error('Error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
     throw new Error(error.response?.data?.message || 'Failed to save sermon');
   }
 }
@@ -104,7 +114,7 @@ export async function saveSermon(sermon: Omit<SavedSermon, 'id' | 'date'>): Prom
  */
 export async function updateSermon(sermon: SavedSermon): Promise<SavedSermon> {
   try {
-    const response = await apiClient.put<SermonResponse>(`/v1/sermons/${sermon.id}`, {
+    const response = await apiClient.put<SermonResponse>(`/sermons/${sermon.id}`, {
       title: sermon.title,
       verses: sermon.verses,
       interpretation: sermon.interpretation,
@@ -128,7 +138,7 @@ export async function updateSermon(sermon: SavedSermon): Promise<SavedSermon> {
  */
 export async function deleteSermon(id: string): Promise<void> {
   try {
-    await apiClient.delete(`/v1/sermons/${id}`);
+    await apiClient.delete(`/sermons/${id}`);
   } catch (error: any) {
     console.error('Error deleting sermon:', error);
     throw new Error(error.response?.data?.message || 'Failed to delete sermon');

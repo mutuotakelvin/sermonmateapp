@@ -18,6 +18,9 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url);
+    if (config.data && (config.method === 'post' || config.method === 'put')) {
+      console.log('Request payload:', JSON.stringify(config.data, null, 2));
+    }
     return config;
   },
   (error) => {

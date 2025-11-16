@@ -113,10 +113,11 @@ export default function SermonModal({
         // Create new sermon
         await saveSermonApi({
           title: title.trim(),
-          verses: displaySermon.verses,
-          interpretation: displaySermon.interpretation,
-          story: displaySermon.story,
+          verses: displaySermon.verses || [],
+          interpretation: displaySermon.interpretation || '',
+          story: displaySermon.story || '',
           color: selectedColor,
+          topic: topic,
         });
         Alert.alert('Success', 'Sermon saved successfully!');
       }

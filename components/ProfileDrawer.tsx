@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import Animated, {
@@ -75,6 +76,10 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
 
   const handleThemeToggle = async () => {
     await toggleTheme();
+  };
+
+  const handleTermsPress = () => {
+    Linking.openURL('https://sermonmate.bobakdevs.com/terms');
   };
 
   const getInitials = () => {
@@ -166,6 +171,16 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
               <Text style={styles.versionText}>
                 Version {Constants.expoConfig?.version || '1.0.0'}
               </Text>
+              
+              <Text style={styles.versionText}>
+                Powered by bobakdevs
+              </Text>
+              
+              <TouchableOpacity onPress={handleTermsPress}>
+                <Text style={styles.versionText}>
+                  Terms and Conditions
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
