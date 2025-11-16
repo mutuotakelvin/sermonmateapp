@@ -1,21 +1,21 @@
+import { useToast } from '@/components/ToastProvider';
+import { useAuthStore } from '@/lib/stores/auth';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Link, router } from 'expo-router';
-import { useAuthStore } from '@/lib/stores/auth';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -27,20 +27,21 @@ export default function RegisterScreen() {
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   
   const { register } = useAuthStore();
+  const { showError } = useToast();
 
   const handleRegister = async () => {
     if (!name || !email || !password || !passwordConfirmation) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== passwordConfirmation) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
+      showError('Error', 'Password must be at least 8 characters long');
       return;
     }
 
@@ -53,10 +54,10 @@ export default function RegisterScreen() {
       if (result.success) {
         router.replace('/(protected)');
       } else {
-        Alert.alert('Registration Failed', result.message || 'Registration failed');
+        showError('Registration Failed', result.message || 'Registration failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      showError('Error', 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }

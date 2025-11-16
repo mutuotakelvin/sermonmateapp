@@ -1,14 +1,18 @@
 import { useAuthStore } from '@/lib/stores/auth';
+import { sessions, type Session } from '@/utils/sessions';
 import { useConversation } from '@elevenlabs/react-native';
 import * as Brightness from 'expo-brightness';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import Button from '../Button';
 
 export default function SessionScreen() {
     const { user } = useAuthStore();
+    const { sessionId } = useLocalSearchParams()
     const router = useRouter();
+
+    const session: Session = sessions.find((s: Session) => s.id === Number(sessionId)) ?? sessions[0]
 
     const [isStarting, setIsStarting] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
@@ -75,11 +79,14 @@ export default function SessionScreen() {
             setIsStarting(true);
             console.log('🚀 Starting conversation with agent:', agentId);
             console.log('👤 User:', user?.name ?? "User");
+            console.log('📋 Session:', session.title);
             
             await conversation.startSession({
                 agentId: agentId,
                 dynamicVariables: {
                     user_name: user?.name ?? "User",
+                    session_title: session.title,
+                    session_description: session.description,
                 }
             });
             
@@ -137,10 +144,10 @@ export default function SessionScreen() {
             } /> */}
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, padding: 20 }}>
                 <Text style={{ fontSize: 32, fontWeight: 'bold', textAlign: 'center' }}>
-                    AI Conversation
+                    {session.title}
                 </Text>
                 <Text style={{ fontSize: 16, fontWeight: '500', opacity: 0.5, textAlign: 'center' }}>
-                    Start a conversation with your AI coach
+                    {session.description}
                 </Text>
                 
                 {conversation.status === "connecting" && (

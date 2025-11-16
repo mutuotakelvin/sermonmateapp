@@ -1,5 +1,6 @@
 import ProfileDrawer from "@/components/ProfileDrawer";
 import SermonModal from "@/components/SermonModal";
+import { useToast } from "@/components/ToastProvider";
 import { generateSermon } from "@/lib/gemini";
 import { getSermons } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -15,6 +16,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 export default function Home() {
   const { user } = useAuthStore();
   const { theme, initializeTheme } = useThemeStore();
+  const { showSuccess, showError } = useToast();
   const [topic, setTopic] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -63,8 +65,10 @@ export default function Home() {
       setSermon(result);
       setEditingSermon(null);
       setModalVisible(true);
+      showSuccess('Sermon generated', 'Your sermon is ready');
     } catch (error) {
       console.error('Error generating sermon:', error);
+      showError('Generation failed', 'Please try again later');
     } finally {
       setLoading(false);
     }

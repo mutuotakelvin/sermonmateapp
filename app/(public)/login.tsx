@@ -1,22 +1,21 @@
+import { useToast } from '@/components/ToastProvider';
+import { useAuthStore } from '@/lib/stores/auth';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Link, router } from 'expo-router';
-import { useAuthStore } from '@/lib/stores/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -25,10 +24,11 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuthStore();
+  const { showError, showSuccess } = useToast();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
@@ -41,10 +41,10 @@ export default function LoginScreen() {
       if (result.success) {
         router.replace('/(protected)');
       } else {
-        Alert.alert('Login Failed', result.message || 'Invalid credentials');
+        showError('Login Failed', result.message || 'Invalid credentials');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      showError('Error', 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -150,17 +150,17 @@ export default function LoginScreen() {
           </View>
 
           {/* Dev: Clear onboarding button */}
-          {__DEV__ && (
+          {/* {__DEV__ && (
             <TouchableOpacity
               onPress={async () => {
                 await AsyncStorage.removeItem('onboarding_completed');
-                Alert.alert('Success', 'Onboarding cleared! Restart the app to see onboarding again.');
+                showSuccess('Onboarding cleared', 'Restart the app to see onboarding again');
               }}
               style={styles.devButton}
             >
               <Text style={styles.devButtonText}>🧹 Clear Onboarding (Dev)</Text>
             </TouchableOpacity>
-          )}
+          )} */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

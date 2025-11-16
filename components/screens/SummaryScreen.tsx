@@ -1,9 +1,10 @@
-import { ConversationResponse } from '@/utils/types'
-import { useAuthStore } from '@/lib/stores/auth'
+import { useToast } from '@/components/ToastProvider'
 import apiClient from '@/lib/api'
+import { useAuthStore } from '@/lib/stores/auth'
+import { ConversationResponse } from '@/utils/types'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Button from '../Button'
 // import Gradient from '../gradient' // Temporarily disabled - Skia not needed
@@ -12,6 +13,7 @@ export default function SummaryScreen() {
     const { conversationId } = useLocalSearchParams()
     const [ conversation, setConversation ] = useState<ConversationResponse>()
     const { user } = useAuthStore();
+    const { showSuccess, showError } = useToast();
     const [ isSaving, setIsSaving ] = useState(false);
 
     const router = useRouter();
@@ -49,13 +51,14 @@ export default function SummaryScreen() {
                     conversation_history: conversation?.transcript || [],
                 });
 
+                showSuccess('Session saved', 'Your conversation has been saved');
                 router.dismissAll();
             } else {
-                Alert.alert('Error', 'Failed to save session');
+                showError('Error', 'Failed to save session');
             }
         } catch (error: any) {
             console.error('Error saving and continuing:', error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to save session');
+            showError('Error', error.response?.data?.message || 'Failed to save session');
         } finally {
             setIsSaving(false);
         }

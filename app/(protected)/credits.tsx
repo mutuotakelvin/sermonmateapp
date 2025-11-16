@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { useToast } from '@/components/ToastProvider';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useCreditsStore } from '@/lib/stores/credits';
+import React, { useEffect, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function CreditsScreen() {
   const { user, updateUser } = useAuthStore();
   const { packages, isLoading, fetchPackages, initializePayment } = useCreditsStore();
+  const { showSuccess, showError, showInfo } = useToast();
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
   useEffect(() => {
@@ -27,31 +28,22 @@ export default function CreditsScreen() {
       
       if (result.success) {
         // In a real app, you would integrate with Paystack here
-        Alert.alert(
-          'Payment Initialized',
-          'Payment has been initialized. In a real app, this would open the Paystack payment interface.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Simulate successful payment for demo
-                const packageData = packages.find(p => p.id === packageId);
-                if (packageData && user) {
-                  const updatedUser = {
-                    ...user,
-                    credits: user.credits + packageData.sessions_count,
-                  };
-                  updateUser(updatedUser);
-                }
-              },
-            },
-          ]
-        );
+        showInfo('Payment Initialized', 'Payment interface would open here');
+        // Simulate successful payment for demo
+        const packageData = packages.find(p => p.id === packageId);
+        if (packageData && user) {
+          const updatedUser = {
+            ...user,
+            credits: user.credits + packageData.sessions_count,
+          };
+          updateUser(updatedUser);
+          showSuccess('Credits added', `You now have ${updatedUser.credits} credits`);
+        }
       } else {
-        Alert.alert('Error', result.message || 'Failed to initialize payment');
+        showError('Error', result.message || 'Failed to initialize payment');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      showError('Error', 'An unexpected error occurred');
     } finally {
       setSelectedPackage(null);
     }

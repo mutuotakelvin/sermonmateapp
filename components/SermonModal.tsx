@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Clipboard,
     Modal,
     Pressable,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import Collapsible from 'react-native-collapsible';
 
+import { useToast } from '@/components/ToastProvider';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
 import type { SavedSermon, Sermon } from '@/lib/types';
 import { colors } from '@/utils/colors';
@@ -46,6 +46,7 @@ export default function SermonModal({
   onClose,
   onSave,
 }: SermonModalProps) {
+  const { showSuccess, showError, showInfo } = useToast();
   const [versesExpanded, setVersesExpanded] = useState(true);
   const [sermonExpanded, setSermonExpanded] = useState(false);
   const [storyExpanded, setStoryExpanded] = useState(false);
@@ -83,15 +84,15 @@ export default function SermonModal({
   const handleCopy = async (text: string, section: string) => {
     try {
       Clipboard.setString(text);
-      Alert.alert('Copied!', `${section} copied to clipboard`);
+      showInfo('Copied!', `${section} copied to clipboard`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to copy to clipboard');
+      showError('Error', 'Failed to copy to clipboard');
     }
   };
 
   const handleSave = async () => {
     if (!displaySermon || !title.trim()) {
-      Alert.alert('Error', 'Please enter a title for your sermon');
+      showError('Error', 'Please enter a title for your sermon');
       return;
     }
 
@@ -108,7 +109,7 @@ export default function SermonModal({
           color: selectedColor,
         };
         await updateSermon(updatedSermon);
-        Alert.alert('Success', 'Sermon updated successfully!');
+        showSuccess('Sermon updated', 'Your sermon has been updated successfully');
       } else {
         // Create new sermon
         await saveSermonApi({
@@ -119,13 +120,13 @@ export default function SermonModal({
           color: selectedColor,
           topic: topic,
         });
-        Alert.alert('Success', 'Sermon saved successfully!');
+        showSuccess('Sermon saved', 'Your sermon has been saved successfully');
       }
       onSave();
       onClose();
     } catch (error: any) {
       console.error('Error saving sermon:', error);
-      Alert.alert('Error', error.message || 'Failed to save sermon');
+      showError('Error', error.message || 'Failed to save sermon');
     } finally {
       setSaving(false);
     }
