@@ -29,7 +29,6 @@
       ]
     },
     "web": {
-      "output": "server",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -48,13 +47,12 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "2ae14b42-3631-44c5-b736-b56f21c99432"
+        "projectId": "9d737b63-33ca-4168-bfae-f89e8d3415df"
       }
     }
   }

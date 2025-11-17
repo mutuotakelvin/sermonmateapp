@@ -82,6 +82,31 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
     Linking.openURL('https://sermonmate.bobakdevs.com/terms');
   };
 
+  const handlePrivacyPolicyPress = () => {
+    Linking.openURL('https://sermonmate.bobakdevs.com/privacy');
+  };
+
+  const handleReportIssuePress = () => {
+    Linking.openURL('mailto:info@bobakdevs.com?subject=Report Issue');
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'To request account deletion, please email info@bobakdevs.com. We will process your request and delete all associated data.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open Email',
+          style: 'destructive',
+          onPress: () => {
+            Linking.openURL('mailto:info@bobakdevs.com?subject=Account Deletion Request');
+          },
+        },
+      ]
+    );
+  };
+
   const getInitials = () => {
     if (!user?.name) return 'U';
     const names = user.name.split(' ');
@@ -161,12 +186,44 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
               </View>
             </View>
 
-            {/* Sign Out Button */}
+            {/* Footer Actions */}
             <View style={styles.footer}>
+              <TouchableOpacity 
+                style={styles.reportIssueButton} 
+                onPress={handleReportIssuePress}
+              >
+                <Ionicons name="flag-outline" size={18} color={isDark ? '#fff' : '#111827'} />
+                <Text style={[styles.reportIssueText, { color: isDark ? '#fff' : '#111827' }]}>
+                  Report Issue
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.deleteAccountButton} 
+                onPress={handleDeleteAccount}
+              >
+                <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                <Text style={styles.deleteAccountText}>Delete Account</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
                 <Ionicons name="log-out-outline" size={20} color="#fff" />
                 <Text style={styles.signOutText}>Sign Out</Text>
               </TouchableOpacity>
+              
+              <View style={styles.linksContainer}>
+                <TouchableOpacity onPress={handleTermsPress}>
+                  <Text style={styles.linkText}>
+                    Terms and Conditions
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handlePrivacyPolicyPress}>
+                  <Text style={styles.linkText}>
+                    Privacy Policy
+                  </Text>
+                </TouchableOpacity>
+              </View>
               
               <Text style={styles.versionText}>
                 Version {Constants.expoConfig?.version || '1.0.0'}
@@ -175,12 +232,6 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
               <Text style={styles.versionText}>
                 Powered by bobakdevs
               </Text>
-              
-              <TouchableOpacity onPress={handleTermsPress}>
-                <Text style={styles.versionText}>
-                  Terms and Conditions
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
@@ -288,7 +339,36 @@ const getStyles = (isDark: boolean) =>
     footer: {
       marginTop: 'auto',
       padding: 16,
-      gap: 16,
+      gap: 12,
+    },
+    reportIssueButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: isDark ? '#374151' : '#f3f4f6',
+      borderRadius: 8,
+      padding: 14,
+      gap: 8,
+    },
+    reportIssueText: {
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    deleteAccountButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: '#ef4444',
+      borderRadius: 8,
+      padding: 14,
+      gap: 8,
+    },
+    deleteAccountText: {
+      color: '#ef4444',
+      fontSize: 15,
+      fontWeight: '600',
     },
     signOutButton: {
       flexDirection: 'row',
@@ -303,6 +383,17 @@ const getStyles = (isDark: boolean) =>
       color: '#fff',
       fontSize: 16,
       fontWeight: '600',
+    },
+    linksContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 16,
+      marginTop: 4,
+    },
+    linkText: {
+      fontSize: 12,
+      color: isDark ? '#6b7280' : '#9ca3af',
+      textDecorationLine: 'underline',
     },
     versionText: {
       fontSize: 12,

@@ -20,13 +20,6 @@ export default function TabsLayout() {
           href: null, // This hides the tab
         }}
       />
-      {/* Hide any sermon route if it still exists */}
-      <Tabs.Screen
-        name="sermon/index"
-        options={{
-          href: null, // This hides the tab
-        }}
-      />
     </Tabs>
   );
 }

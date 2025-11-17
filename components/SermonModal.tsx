@@ -307,6 +307,13 @@ export default function SermonModal({
                 <Text style={styles.saveButtonText}>{savedSermon ? 'Update Sermon' : 'Save Sermon'}</Text>
               )}
             </Pressable>
+
+            {/* AI Disclaimer */}
+            {!savedSermon && (
+              <Text style={styles.aiDisclaimer}>
+                Powered by AI
+              </Text>
+            )}
             </ScrollView>
           )}
         </View>
@@ -469,6 +476,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  aiDisclaimer: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
   },
 });
 
