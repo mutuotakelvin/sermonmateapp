@@ -35,6 +35,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email: string, password: string) => {
     set({ isLoading: true });
     
+    // Log login attempt for debugging
+    console.log('🔐 LOGIN ATTEMPT');
+    console.log('Email:', email);
+    console.log('API Base URL:', apiClient.defaults.baseURL);
+    console.log('Full Login URL:', `${apiClient.defaults.baseURL}/login`);
+    
     try {
       const response = await apiClient.post('/login', {
         email,
@@ -62,12 +68,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error: any) {
       set({ isLoading: false });
       console.error('Login error:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        code: error.code,
+      });
       
       if (error.code === 'NETWORK_ERROR' || !error.response) {
-        return { success: false, message: 'Network error. Please check your connection and try again.' };
+        return { success: false, message: 'Network error. Please check your internet connection and try again.' };
       }
       
-      const message = error.response?.data?.message || 'Login failed';
+      // Handle specific HTTP status codes
+      if (error.response?.status === 500) {
+        return { success: false, message: 'Server error. Please try again later or contact support.' };
+      }
+      
+      if (error.response?.status === 401) {
+        return { success: false, message: 'Invalid email or password. Please try again.' };
+      }
+      
+      const message = error.response?.data?.message || error.response?.data?.error || 'Login failed. Please try again.';
       return { success: false, message };
     }
   },
