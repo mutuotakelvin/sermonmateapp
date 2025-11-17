@@ -14,13 +14,15 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "NODE_OPTIONS": "--max-old-space-size=4096"
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "EXPO_PUBLIC_API_URL": "https://sermonmate.bobakdevs.com/api/v1"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "NODE_OPTIONS": "--max-old-space-size=4096"
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "EXPO_PUBLIC_API_URL": "https://sermonmate.bobakdevs.com/api/v1"
       }
     }
   },
