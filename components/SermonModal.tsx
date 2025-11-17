@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
     ActivityIndicator,
     Clipboard,
@@ -53,6 +53,7 @@ export default function SermonModal({
   const [title, setTitle] = useState(topic);
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].id);
   const [saving, setSaving] = useState(false);
+  const [collapsibleKey, setCollapsibleKey] = useState(0);
 
   // Determine which sermon data to use (savedSermon for editing, sermon for new)
   const displaySermon = savedSermon ? {
@@ -61,25 +62,50 @@ export default function SermonModal({
     story: savedSermon.story,
   } : sermon;
 
-  React.useEffect(() => {
+  // Increment key when modal opens to force Collapsible remount
+  useEffect(() => {
+    if (visible) {
+      setCollapsibleKey(prev => prev + 1);
+      // Start collapsed, then expand after mount to trigger Collapsible animation
+      setVersesExpanded(false);
+      // Use requestAnimationFrame to ensure it happens after render
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setVersesExpanded(true);
+        });
+      });
+    }
+  }, [visible]);
+
+  // Use useLayoutEffect to set state synchronously before render
+  useLayoutEffect(() => {
     if (visible) {
       if (savedSermon) {
         // Editing existing sermon
         setTitle(savedSermon.title);
         setSelectedColor(savedSermon.color);
-        setVersesExpanded(true);
+        setSermonExpanded(false);
+        setStoryExpanded(false);
+      } else if (sermon) {
+        // New sermon - ensure verses are expanded when sermon is available
+        setTitle(topic);
+        setSelectedColor(COLOR_OPTIONS[0].id);
         setSermonExpanded(false);
         setStoryExpanded(false);
       } else if (topic) {
-        // New sermon
+        // Modal opened but sermon not yet generated
         setTitle(topic);
         setSelectedColor(COLOR_OPTIONS[0].id);
-        setVersesExpanded(true);
         setSermonExpanded(false);
         setStoryExpanded(false);
       }
+    } else {
+      // Reset state when modal closes
+      setVersesExpanded(true);
+      setSermonExpanded(false);
+      setStoryExpanded(false);
     }
-  }, [visible, topic, savedSermon]);
+  }, [visible, topic, savedSermon, sermon]);
 
   const handleCopy = async (text: string, section: string) => {
     try {
@@ -198,7 +224,10 @@ export default function SermonModal({
                   />
                 </View>
               </Pressable>
-              <Collapsible collapsed={!versesExpanded}>
+              <Collapsible 
+                collapsed={!versesExpanded}
+                key={`verses-${collapsibleKey}-${savedSermon?.id || (sermon ? 'new' : 'none')}`}
+              >
                 <View style={styles.accordionContent}>
                   {displaySermon.verses.map((verse, index) => (
                     <Text key={index} style={styles.verseText}>
