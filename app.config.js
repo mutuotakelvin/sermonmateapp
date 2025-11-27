@@ -55,7 +55,9 @@ export default {
         projectId: "9d737b63-33ca-4168-bfae-f89e8d3415df"
       },
       // Make API URL available via expo-constants
-      apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://sermonmate.bobakdevs.com/api/v1"
+      apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://sermonmate.bobakdevs.com/api/v1",
+      // Make Gemini API key available
+      geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY
     }
   }
 };

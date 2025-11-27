@@ -23,4 +23,36 @@ export type SavedSermon = {
   is_public?: boolean // Optional for future web use
 }
 
+export type MoodType = 
+  | 'Happy' 
+  | 'Grateful' 
+  | 'Hopeful' 
+  | 'Peaceful' 
+  | 'Anxious' 
+  | 'Sad' 
+  | 'Overwhelmed' 
+  | 'Angry'
+
+export type MoodEntry = {
+  id: string
+  mood: MoodType
+  reason: string[]
+  customReason?: string
+  date: string // ISO date string
+  sermon?: Sermon
+  aiAdvice?: string
+}
+
+export type MoodHistory = {
+  entries: MoodEntry[]
+}
+
+export type WeeklyMoodSummary = {
+  weekStart: string // ISO date
+  weekEnd: string // ISO date
+  entries: MoodEntry[]
+  averageMood?: MoodType
+  mostCommonMood?: MoodType
+}
+
 

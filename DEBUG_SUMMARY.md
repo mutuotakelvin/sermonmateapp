@@ -50,16 +50,16 @@ You should see logs like this when you try to login:
 
 ```
 === API Configuration ===
-Using API Base URL: https://api.sermonmate.bobakdevs.com/api/v1
+Using API Base URL: https://sermonmate.bobakdevs.com/api/v1
 
 🔐 LOGIN ATTEMPT
-Full Login URL: https://api.sermonmate.bobakdevs.com/api/v1/login
+Full Login URL: https://sermonmate.bobakdevs.com/api/v1/login
 
 ═══════════════════════════════════════
 📤 API REQUEST
 ═══════════════════════════════════════
 Method: POST
-Full URL: https://api.sermonmate.bobakdevs.com/api/v1/login
+Full URL: https://sermonmate.bobakdevs.com/api/v1/login
 Headers: {...}
 Request payload: {"email":"...","password":"***HIDDEN***"}
 ═══════════════════════════════════════
@@ -72,7 +72,7 @@ If there's an error, you'll see:
 ❌ API RESPONSE ERROR
 ═══════════════════════════════════════
 Status: 500
-Full URL: https://api.sermonmate.bobakdevs.com/api/v1/login
+Full URL: https://sermonmate.bobakdevs.com/api/v1/login
 Response Data: {...}
 ═══════════════════════════════════════
 ```
@@ -84,11 +84,11 @@ Copy the relevant log sections (especially the error section if there is one) an
 ## What to Check
 
 1. **Is the API URL correct?**
-   - Should be: `https://api.sermonmate.bobakdevs.com/api/v1`
+   - Should be: `https://sermonmate.bobakdevs.com/api/v1`
    - Check the "Using API Base URL" log
 
 2. **Is the full URL correct?**
-   - Should be: `https://api.sermonmate.bobakdevs.com/api/v1/login`
+   - Should be: `https://sermonmate.bobakdevs.com/api/v1/login`
    - Check the "Full URL" in the API REQUEST log
 
 3. **What's the error?**

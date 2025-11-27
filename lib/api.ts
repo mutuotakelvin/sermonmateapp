@@ -1,7 +1,9 @@
+import 'react-native-url-polyfill/auto';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Production API URL - hardcoded to ensure it works in preview builds
+// Note: This should match the URL that works in Postman
 const PRODUCTION_API_URL = 'https://sermonmate.bobakdevs.com/api/v1';
 
 // Get API URL - prioritize env var, but always fallback to production URL
@@ -9,9 +11,16 @@ const PRODUCTION_API_URL = 'https://sermonmate.bobakdevs.com/api/v1';
 const getApiBaseUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   
+  // Fix: Remove 'api.' subdomain if present (legacy issue)
+  let cleanEnvUrl = envUrl;
+  if (cleanEnvUrl && cleanEnvUrl.includes('api.sermonmate.bobakdevs.com')) {
+    console.warn('⚠️  Fixing incorrect API URL (removing api. subdomain)');
+    cleanEnvUrl = cleanEnvUrl.replace('api.sermonmate.bobakdevs.com', 'sermonmate.bobakdevs.com');
+  }
+  
   // If env var is set and not undefined/null/empty, use it
-  if (envUrl && envUrl !== 'undefined' && envUrl.trim() !== '') {
-    return envUrl;
+  if (cleanEnvUrl && cleanEnvUrl !== 'undefined' && cleanEnvUrl.trim() !== '') {
+    return cleanEnvUrl;
   }
   
   // Otherwise, use production URL
@@ -21,17 +30,25 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 // Log the API URL being used (helpful for debugging)
-console.log('=== API Configuration ===');
-console.log('__DEV__:', __DEV__);
-console.log('EXPO_PUBLIC_API_URL env var:', process.env.EXPO_PUBLIC_API_URL);
-console.log('Using API Base URL:', API_BASE_URL);
-console.log('=======================');
+// Using console.warn for better visibility in Metro bundler
+console.warn('═══════════════════════════════════════');
+console.warn('🔧 API Configuration');
+console.warn('═══════════════════════════════════════');
+console.warn('__DEV__:', __DEV__);
+console.warn('EXPO_PUBLIC_API_URL env var (raw):', process.env.EXPO_PUBLIC_API_URL);
+console.warn('Using API Base URL:', API_BASE_URL);
+console.warn('Expected URL: https://sermonmate.bobakdevs.com/api/v1');
+if (API_BASE_URL.includes('api.sermonmate')) {
+  console.error('❌ ERROR: Still using wrong URL with api. subdomain!');
+  console.error('This should have been auto-corrected. Check environment variables.');
+}
+console.warn('═══════════════════════════════════════');
 
 if (!API_BASE_URL || API_BASE_URL === 'undefined') {
   console.error('ERROR: API_BASE_URL is not set! This will cause network errors.');
 }
 
-// Create axios instance
+// Create axios instance with React Native compatible configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {

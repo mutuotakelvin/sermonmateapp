@@ -152,21 +152,21 @@ export default function Onboarding() {
   const screens = [
     {
       title: 'Generate Sermons',
-      description: 'Create powerful, AI-generated sermons tailored to your congregation\'s needs with just a few taps.',
+      description: 'Create insightful, AI-generated sermons for your personal study and reflection with just a few taps.',
       icon: 'sparkles',
       iconColor: '#FFCC00',
       gradientColors: ['#FFF9E6', '#FFF5D6', '#FFF0C2'],
     },
     {
       title: 'Share Sermons',
-      description: 'Easily share your sermons with your team, congregation, or save them for later reference.',
+      description: 'Easily share an inspiring message with friends, family, or your study group.',
       icon: 'share-social',
       iconColor: '#007AFF',
       gradientColors: ['#E6F3FF', '#D6EBFF', '#C7E3FF'],
     },
     {
       title: 'Save Sermons',
-      description: 'Organize and save all your sermons in one place. Access them anytime, anywhere.',
+      description: 'Organize and save all your favorite sermons in one place. Access them anytime, anywhere.',
       icon: 'bookmark',
       iconColor: '#34C759',
       gradientColors: ['#E6F9EC', '#D6F5E0', '#C7F1D4'],

@@ -1,10 +1,13 @@
 import ProfileDrawer from "@/components/ProfileDrawer";
 import SermonModal from "@/components/SermonModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import MoodModal from "@/components/MoodModal";
 import { useToast } from "@/components/ToastProvider";
 import { generateSermon } from "@/lib/gemini";
-import { getSermons } from "@/lib/sermonApi";
+import { getSermons, deleteSermon } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useThemeStore } from "@/lib/stores/theme";
+import { useMoodStore } from "@/lib/stores/mood";
 import type { SavedSermon, Sermon } from "@/lib/types";
 import { colors } from "@/utils/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,11 +15,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
 
 export default function Home() {
   const { user } = useAuthStore();
   const { theme, initializeTheme } = useThemeStore();
   const { showSuccess, showError } = useToast();
+  const { weeklySummary, loadMoodEntries, getWeeklySummary } = useMoodStore();
+  const router = useRouter();
   const [topic, setTopic] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -24,6 +30,10 @@ export default function Home() {
   const [editingSermon, setEditingSermon] = useState<SavedSermon | null>(null);
   const [loading, setLoading] = useState(false);
   const [savedSermons, setSavedSermons] = useState<SavedSermon[]>([]);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [sermonToDelete, setSermonToDelete] = useState<SavedSermon | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [moodModalVisible, setMoodModalVisible] = useState(false);
 
   const isDark = theme === 'dark';
   const dynamicStyles = getStyles(isDark);
@@ -43,6 +53,8 @@ export default function Home() {
   useEffect(() => {
     initializeTheme();
     loadSavedSermons();
+    loadMoodEntries();
+    getWeeklySummary();
   }, []);
 
   const loadSavedSermons = async () => {
@@ -68,7 +80,22 @@ export default function Home() {
       showSuccess('Sermon generated', 'Your sermon is ready');
     } catch (error) {
       console.error('Error generating sermon:', error);
-      showError('Generation failed', 'Please try again later');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Error details:', {
+        message: errorMessage,
+        error: error,
+      });
+      
+      // Show more specific error messages
+      if (errorMessage.includes('Missing EXPO_PUBLIC_GEMINI_API_KEY')) {
+        showError('Configuration Error', 'Gemini API key is missing. Please check your environment variables.');
+      } else if (errorMessage.includes('Gemini API error')) {
+        showError('API Error', errorMessage);
+      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+        showError('Network Error', 'Could not connect to Gemini API. Please check your internet connection.');
+      } else {
+        showError('Generation failed', errorMessage.length > 100 ? errorMessage.substring(0, 100) + '...' : errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -88,6 +115,35 @@ export default function Home() {
 
   const handleSave = () => {
     loadSavedSermons();
+  };
+
+  const handleDeletePress = (savedSermon: SavedSermon) => {
+    setSermonToDelete(savedSermon);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!sermonToDelete) return;
+
+    setDeleting(true);
+    try {
+      await deleteSermon(sermonToDelete.id);
+      showSuccess('Sermon deleted', 'The sermon has been deleted permanently');
+      setDeleteModalVisible(false);
+      setSermonToDelete(null);
+      loadSavedSermons();
+    } catch (error) {
+      console.error('Error deleting sermon:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete sermon';
+      showError('Delete failed', errorMessage);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false);
+    setSermonToDelete(null);
   };
 
   const getColorGradient = (colorId: string) => {
@@ -143,6 +199,21 @@ export default function Home() {
             </Pressable>
           </View>
           <View style={dynamicStyles.chipsRow}>
+            {/* Mood Chip - Special styling */}
+            <Pressable 
+              style={dynamicStyles.moodChip}
+              onPress={() => setMoodModalVisible(true)}
+            >
+              <LinearGradient
+                colors={['#A78BFA', '#EC4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={dynamicStyles.moodChipGradient}
+              >
+                <Ionicons name="add" size={16} color="#fff" />
+                <Text style={dynamicStyles.moodChipText}>Mood</Text>
+              </LinearGradient>
+            </Pressable>
             {chips.map((c) => (
               <Pressable 
                 key={c} 
@@ -154,6 +225,54 @@ export default function Home() {
             ))}
           </View>
         </View>
+
+        {/* Weekly Mood Summary Section */}
+        {weeklySummary && weeklySummary.entries.length > 0 && (
+          <View style={dynamicStyles.moodSummaryContainer}>
+            <View style={dynamicStyles.moodSummaryHeader}>
+              <Text style={dynamicStyles.moodSummaryTitle}>This Week's Mood</Text>
+              <Pressable
+                onPress={() => router.push('/mood-history')}
+                style={dynamicStyles.moreButton}
+              >
+                <Text style={dynamicStyles.moreButtonText}>More</Text>
+                <Ionicons name="chevron-forward" size={16} color={isDark ? "#9ca3af" : "#6b7280"} />
+              </Pressable>
+            </View>
+            <View style={dynamicStyles.weekDaysContainer}>
+              {Array.from({ length: 7 }).map((_, index) => {
+                const date = new Date(weeklySummary.weekStart);
+                date.setDate(date.getDate() + index);
+                const dateStr = date.toISOString().split('T')[0];
+                const dayEntry = weeklySummary.entries.find(
+                  (e) => e.date.split('T')[0] === dateStr
+                );
+                const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
+                
+                const moodDotStyle = dayEntry 
+                  ? (dynamicStyles as any)[`moodDot${dayEntry.mood}`] 
+                  : null;
+                
+                return (
+                  <View key={index} style={dynamicStyles.dayContainer}>
+                    <Text style={dynamicStyles.dayName}>{dayName}</Text>
+                    <View
+                      style={[
+                        dynamicStyles.moodDot,
+                        moodDotStyle,
+                      ]}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+            {weeklySummary.mostCommonMood && (
+              <Text style={dynamicStyles.moodSummaryText}>
+                Most common: {weeklySummary.mostCommonMood}
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Scrollable Sermons Section */}
         <View style={dynamicStyles.sermonsContainer}>
@@ -181,6 +300,14 @@ export default function Home() {
                       end={{ x: 1, y: 1 }}
                       style={dynamicStyles.sermonCardGradient}
                     >
+                      <View style={dynamicStyles.deleteButtonContainer} pointerEvents="box-none">
+                        <Pressable
+                          style={dynamicStyles.deleteButton}
+                          onPress={() => handleDeletePress(savedSermon)}
+                        >
+                          <Ionicons name="trash-outline" size={18} color="#fff" style={{ opacity: 0.9 }} />
+                        </Pressable>
+                      </View>
                       <Text style={dynamicStyles.sermonCardTitle} numberOfLines={2}>
                         {savedSermon.title}
                       </Text>
@@ -206,9 +333,30 @@ export default function Home() {
           onClose={handleModalClose}
           onSave={handleSave}
         />
+        <ConfirmationModal
+          visible={deleteModalVisible}
+          title="Delete Sermon?"
+          message="This sermon will be deleted permanently. This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          destructive={true}
+          loading={deleting}
+        />
         <ProfileDrawer
           visible={drawerVisible}
           onClose={() => setDrawerVisible(false)}
+        />
+        <MoodModal
+          visible={moodModalVisible}
+          onClose={() => {
+            setMoodModalVisible(false);
+            getWeeklySummary();
+          }}
+          onComplete={() => {
+            getWeeklySummary();
+          }}
         />
       </SafeAreaView>
     </SafeAreaProvider>
@@ -318,6 +466,24 @@ const getStyles = (isDark: boolean) =>
       color: isDark ? "#fff" : "#111827",
       fontWeight: "600",
     },
+    moodChip: {
+      borderRadius: 999,
+      overflow: 'hidden',
+    },
+    moodChipGradient: {
+      paddingHorizontal: 12,
+      height: 36,
+      borderRadius: 999,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    moodChipText: {
+      color: "#fff",
+      fontWeight: "600",
+      fontSize: 14,
+    },
     sermonsContainer: {
       flex: 1,
     },
@@ -384,11 +550,26 @@ const getStyles = (isDark: boolean) =>
       minHeight: 160,
       justifyContent: "space-between",
     },
+    deleteButtonContainer: {
+      position: "absolute",
+      top: 12,
+      right: 12,
+      zIndex: 10,
+    },
+    deleteButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: "rgba(0, 0, 0, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
     sermonCardTitle: {
       fontSize: 16,
       fontWeight: "700",
       color: "#fff",
       marginBottom: 8,
+      marginTop: 4,
     },
     sermonCardDescription: {
       fontSize: 13,
@@ -405,6 +586,90 @@ const getStyles = (isDark: boolean) =>
       fontSize: 12,
       color: "#fff",
       opacity: 0.8,
+    },
+    moodSummaryContainer: {
+      marginTop: 16,
+      marginHorizontal: 16,
+      padding: 16,
+      borderRadius: 16,
+      backgroundColor: isDark ? "#1f2937" : "#F9FAFB",
+      gap: 12,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
+    },
+    moodSummaryHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    moodSummaryTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDark ? "#fff" : "#111827",
+    },
+    moreButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    moreButtonText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: isDark ? "#9ca3af" : "#6b7280",
+    },
+    weekDaysContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    dayContainer: {
+      alignItems: 'center',
+      gap: 8,
+    },
+    dayName: {
+      fontSize: 12,
+      fontWeight: "500",
+      color: isDark ? "#9ca3af" : "#6b7280",
+    },
+    moodDot: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? "#374151" : "#e5e7eb",
+    },
+    moodDotHappy: {
+      backgroundColor: '#FCD34D',
+    },
+    moodDotGrateful: {
+      backgroundColor: '#86EFAC',
+    },
+    moodDotHopeful: {
+      backgroundColor: '#60A5FA',
+    },
+    moodDotPeaceful: {
+      backgroundColor: '#6EE7F9',
+    },
+    moodDotAnxious: {
+      backgroundColor: '#FCD34D',
+    },
+    moodDotSad: {
+      backgroundColor: '#93C5FD',
+    },
+    moodDotOverwhelmed: {
+      backgroundColor: '#F9A8D4',
+    },
+    moodDotAngry: {
+      backgroundColor: '#F87171',
+    },
+    moodSummaryText: {
+      fontSize: 14,
+      color: isDark ? "#9ca3af" : "#6b7280",
+      textAlign: 'center',
+      marginTop: 4,
     },
   });
 

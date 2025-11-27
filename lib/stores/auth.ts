@@ -73,10 +73,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         data: error.response?.data,
         message: error.message,
         code: error.code,
+        name: error.name,
       });
       
-      if (error.code === 'NETWORK_ERROR' || !error.response) {
-        return { success: false, message: 'Network error. Please check your internet connection and try again.' };
+      // Check for network errors - no response means network issue
+      // Common network error codes: ECONNABORTED, ENOTFOUND, ETIMEDOUT, ERR_NETWORK, NETWORK_ERROR
+      const isNetworkError = !error.response || 
+        error.code === 'NETWORK_ERROR' ||
+        error.code === 'ECONNABORTED' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ERR_NETWORK' ||
+        error.code === 'ERR_INTERNET_DISCONNECTED' ||
+        error.message?.includes('Network Error') ||
+        error.message?.includes('network') ||
+        error.message?.includes('timeout');
+      
+      if (isNetworkError) {
+        return { success: false, message: 'Network error. Please check your internet connection and try again later' };
       }
       
       // Handle specific HTTP status codes

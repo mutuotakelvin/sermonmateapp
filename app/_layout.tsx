@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import { ToastProvider } from '@/components/ToastProvider';
 import { Stack } from 'expo-router';
 

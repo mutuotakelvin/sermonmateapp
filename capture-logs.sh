@@ -43,3 +43,9 @@ echo ""
 # Capture logs with filters
 adb logcat | grep -E "API|Error|ReactNative|Expo|LOGIN|api|error" --color=always
 
+
+
+
+
+
+

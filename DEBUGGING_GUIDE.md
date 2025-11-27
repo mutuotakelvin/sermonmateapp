@@ -24,13 +24,13 @@ When you try to login, you should see logs like:
 ### ✅ Good Signs:
 ```
 === API Configuration ===
-Using API Base URL: https://api.sermonmate.bobakdevs.com/api/v1
+Using API Base URL: https://sermonmate.bobakdevs.com/api/v1
 
 🔐 LOGIN ATTEMPT
-Full Login URL: https://api.sermonmate.bobakdevs.com/api/v1/login
+Full Login URL: https://sermonmate.bobakdevs.com/api/v1/login
 
 📤 API REQUEST
-Full URL: https://api.sermonmate.bobakdevs.com/api/v1/login
+Full URL: https://sermonmate.bobakdevs.com/api/v1/login
 Method: POST
 ```
 
@@ -62,7 +62,7 @@ eas build --profile preview --platform android
 
 **Check:** Look at the "Full URL" in the logs. It should be:
 ```
-https://api.sermonmate.bobakdevs.com/api/v1/login
+https://sermonmate.bobakdevs.com/api/v1/login
 ```
 
 ### Issue 3: 500 Error from Server
@@ -83,13 +83,13 @@ https://api.sermonmate.bobakdevs.com/api/v1/login
 
 **Check:** The full URL should be exactly:
 ```
-https://api.sermonmate.bobakdevs.com/api/v1/login
+https://sermonmate.bobakdevs.com/api/v1/login
 ```
 
 Not:
-- `https://api.sermonmate.bobakdevs.com/login` ❌
-- `https://api.sermonmate.bobakdevs.com/api/login` ❌
-- `https://api.sermonmate.bobakdevs.com/v1/login` ❌
+- `https://sermonmate.bobakdevs.com/login` ❌
+- `https://sermonmate.bobakdevs.com/api/login` ❌
+- `https://sermonmate.bobakdevs.com/v1/login` ❌
 
 ## Step-by-Step Debugging
 
