@@ -24,10 +24,6 @@ export default function Profile() {
     );
   };
 
-  const handleCredits = () => {
-    router.push('/credits');
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.profileCard}>
@@ -40,20 +36,9 @@ export default function Profile() {
         <Text style={styles.name}>{user?.name || 'User'}</Text>
         <Text style={styles.email}>{user?.email || ''}</Text>
         
-        <View style={styles.creditsContainer}>
-          <Text style={styles.creditsLabel}>Credits</Text>
-          <Text style={styles.creditsAmount}>{user?.credits || 0}</Text>
-          <Text style={styles.creditsDescription}>
-            {user?.free_trial_used ? 'Free trial used' : 'Free trial available'}
-          </Text>
-        </View>
       </View>
 
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleCredits}>
-          <Text style={styles.actionButtonText}>Manage Credits</Text>
-        </TouchableOpacity>
-        
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Sign Out</Text>
         </TouchableOpacity>
@@ -105,41 +90,8 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 24,
   },
-  creditsContainer: {
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    width: '100%',
-  },
-  creditsLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  creditsAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-    marginBottom: 4,
-  },
-  creditsDescription: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
   actionsContainer: {
     gap: 12,
-  },
-  actionButton: {
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   logoutButton: {
     backgroundColor: '#ef4444',
