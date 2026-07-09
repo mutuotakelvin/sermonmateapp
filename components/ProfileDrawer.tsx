@@ -79,11 +79,11 @@ export default function ProfileDrawer({ visible, onClose }: ProfileDrawerProps) 
   };
 
   const handleTermsPress = () => {
-    Linking.openURL('https://sermonmate.bobakdevs.com/terms');
+    Linking.openURL('https://bobakdevs.com/terms');
   };
 
   const handlePrivacyPolicyPress = () => {
-    Linking.openURL('https://sermonmate.bobakdevs.com/privacy');
+    Linking.openURL('https://bobakdevs.com/privacy');
   };
 
   const handleReportIssuePress = () => {

@@ -1,23 +1,15 @@
 import { Sermon, MoodType } from "./types"
 import Constants from 'expo-constants';
 
-// Try multiple sources for the API key
-const GEMINI_API_KEY = 
-  process.env.EXPO_PUBLIC_GEMINI_API_KEY || 
-  Constants.expoConfig?.extra?.geminiApiKey ||
-  'AIzaSyC6cPr0wx8amOOfAf2od7ByxWivw-ZLAuE'; // Fallback to hardcoded key
+// API key must come from the environment (EXPO_PUBLIC_GEMINI_API_KEY) —
+// never hardcode it; the old hardcoded key was rotated after being shipped in APKs.
+const GEMINI_API_KEY =
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+  Constants.expoConfig?.extra?.geminiApiKey;
 
 export async function generateSermon(topic: string): Promise<Sermon> {
   console.log('🔮 Starting sermon generation for topic:', topic);
-  
-  // Debug: Check which source provided the key
-  const keySource = process.env.EXPO_PUBLIC_GEMINI_API_KEY ? 'process.env' : 
-                   Constants.expoConfig?.extra?.geminiApiKey ? 'expo-constants' : 
-                   'hardcoded fallback';
-  console.log('🔑 Gemini API key source:', keySource);
-  console.log('🔑 process.env.EXPO_PUBLIC_GEMINI_API_KEY:', process.env.EXPO_PUBLIC_GEMINI_API_KEY ? 'SET' : 'NOT SET');
-  console.log('🔑 Constants.expoConfig?.extra?.geminiApiKey:', Constants.expoConfig?.extra?.geminiApiKey ? 'SET' : 'NOT SET');
-  
+
   if (!GEMINI_API_KEY) {
     const error = "Missing EXPO_PUBLIC_GEMINI_API_KEY environment variable";
     console.error('❌', error);
