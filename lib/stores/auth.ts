@@ -1,9 +1,16 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
-import apiClient from '../api';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type User as FirebaseUser,
+} from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -14,10 +21,9 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  
+
   // Actions
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<{ success: boolean; message?: string }>;
@@ -26,192 +32,176 @@ interface AuthState {
   updateUser: (user: User) => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+// Map Firebase Auth error codes to the friendly messages the app showed before.
+function authErrorMessage(code: string | undefined): string {
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Invalid email or password. Please try again.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/weak-password':
+      return 'Password is too weak. Please use at least 8 characters.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a moment and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Please check your internet connection and try again later';
+    default:
+      return 'Something went wrong. Please try again.';
+  }
+}
+
+// Fetch the Firestore profile for a signed-in Firebase user,
+// creating it with defaults if it doesn't exist yet.
+async function fetchUserProfile(fbUser: FirebaseUser): Promise<User> {
+  const userRef = doc(db, 'users', fbUser.uid);
+  const snapshot = await getDoc(userRef);
+
+  if (!snapshot.exists()) {
+    // Safety net: profile doc missing (e.g. interrupted registration) — recreate defaults.
+    await setDoc(userRef, {
+      name: fbUser.displayName ?? '',
+      email: fbUser.email ?? '',
+      role: 'user',
+      credits: 5,
+      free_trial_used: false,
+      createdAt: serverTimestamp(),
+    });
+    return {
+      id: fbUser.uid,
+      name: fbUser.displayName ?? '',
+      email: fbUser.email ?? '',
+      role: 'user',
+      credits: 5,
+      free_trial_used: false,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  const data = snapshot.data();
+  const createdAt = data.createdAt instanceof Timestamp
+    ? data.createdAt.toDate().toISOString()
+    : new Date().toISOString();
+
+  return {
+    id: fbUser.uid,
+    name: data.name ?? '',
+    email: data.email ?? fbUser.email ?? '',
+    role: data.role ?? 'user',
+    credits: data.credits ?? 0,
+    free_trial_used: data.free_trial_used ?? false,
+    created_at: createdAt,
+  };
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: null,
   isLoading: false,
   isAuthenticated: false,
 
   login: async (email: string, password: string) => {
     set({ isLoading: true });
-    
-    // Log login attempt for debugging
-    console.log('🔐 LOGIN ATTEMPT');
-    console.log('Email:', email);
-    console.log('API Base URL:', apiClient.defaults.baseURL);
-    console.log('Full Login URL:', `${apiClient.defaults.baseURL}/login`);
-    
-    try {
-      const response = await apiClient.post('/login', {
-        email,
-        password,
-      });
 
-      if (response.data.success) {
-        const { user, token } = response.data;
-        
-        // Store token securely
-        await SecureStore.setItemAsync('auth_token', token);
-        
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        
-        return { success: true };
-      } else {
-        set({ isLoading: false });
-        return { success: false, message: response.data.message };
-      }
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = await fetchUserProfile(credential.user);
+
+      set({ user, isAuthenticated: true, isLoading: false });
+      return { success: true };
     } catch (error: any) {
+      console.error('Login error:', error?.code, error?.message);
       set({ isLoading: false });
-      console.error('Login error:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        code: error.code,
-        name: error.name,
-      });
-      
-      // Check for network errors - no response means network issue
-      // Common network error codes: ECONNABORTED, ENOTFOUND, ETIMEDOUT, ERR_NETWORK, NETWORK_ERROR
-      const isNetworkError = !error.response || 
-        error.code === 'NETWORK_ERROR' ||
-        error.code === 'ECONNABORTED' ||
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ETIMEDOUT' ||
-        error.code === 'ERR_NETWORK' ||
-        error.code === 'ERR_INTERNET_DISCONNECTED' ||
-        error.message?.includes('Network Error') ||
-        error.message?.includes('network') ||
-        error.message?.includes('timeout');
-      
-      if (isNetworkError) {
-        return { success: false, message: 'Network error. Please check your internet connection and try again later' };
-      }
-      
-      // Handle specific HTTP status codes
-      if (error.response?.status === 500) {
-        return { success: false, message: 'Server error. Please try again later or contact support.' };
-      }
-      
-      if (error.response?.status === 401) {
-        return { success: false, message: 'Invalid email or password. Please try again.' };
-      }
-      
-      const message = error.response?.data?.message || error.response?.data?.error || 'Login failed. Please try again.';
-      return { success: false, message };
+      return { success: false, message: authErrorMessage(error?.code) };
     }
   },
 
   register: async (name: string, email: string, password: string, passwordConfirmation: string) => {
-    set({ isLoading: true });
-    
-    try {
-      const response = await apiClient.post('/register', {
-        name,
-        email,
-        password,
-        password_confirmation: passwordConfirmation,
-      });
+    if (password !== passwordConfirmation) {
+      return { success: false, message: 'Passwords do not match.' };
+    }
 
-      if (response.data.success) {
-        const { user, token } = response.data;
-        
-        // Store token securely
-        await SecureStore.setItemAsync('auth_token', token);
-        
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        
-        return { success: true };
-      } else {
-        set({ isLoading: false });
-        return { success: false, message: response.data.message };
-      }
+    set({ isLoading: true });
+
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      const profile = {
+        name: name.trim(),
+        email: email.trim(),
+        role: 'user',
+        credits: 5,
+        free_trial_used: false,
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, 'users', credential.user.uid), profile);
+
+      const user: User = {
+        id: credential.user.uid,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        credits: profile.credits,
+        free_trial_used: profile.free_trial_used,
+        created_at: new Date().toISOString(),
+      };
+
+      set({ user, isAuthenticated: true, isLoading: false });
+      return { success: true };
     } catch (error: any) {
+      console.error('Registration error:', error?.code, error?.message);
       set({ isLoading: false });
-      console.error('Registration error:', error);
-      
-      if (error.code === 'NETWORK_ERROR' || !error.response) {
-        return { success: false, message: 'Network error. Please check your connection and try again.' };
-      }
-      
-      const message = error.response?.data?.message || 'Registration failed';
-      return { success: false, message };
+      return { success: false, message: authErrorMessage(error?.code) };
     }
   },
 
   logout: async () => {
     try {
-      // Call logout endpoint
-      await apiClient.post('/logout');
+      await signOut(auth);
     } catch (error) {
-      // Ignore logout errors
+      // Ignore sign-out errors; we clear local state regardless.
+      console.error('Logout error:', error);
     }
-    
-    // Clear stored token
-    await SecureStore.deleteItemAsync('auth_token');
-    
-    set({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-    });
+
+    set({ user: null, isAuthenticated: false });
   },
 
   loadUser: async () => {
     set({ isLoading: true });
-    
+
+    // Wait for Firebase to restore the persisted session (one-shot listener).
+    const fbUser = await new Promise<FirebaseUser | null>((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (u) => {
+        unsubscribe();
+        resolve(u);
+      });
+    });
+
+    if (!fbUser) {
+      set({ user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
+
     try {
-      const token = await SecureStore.getItemAsync('auth_token');
-      
-      if (token) {
-        // Set token in axios headers
-        apiClient.defaults.headers.Authorization = `Bearer ${token}`;
-        
-        // Fetch user data
-        const response = await apiClient.get('/user');
-        
-        if (response.data.success) {
-          set({
-            user: response.data.user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } else {
-          // Invalid token, clear it
-          await SecureStore.deleteItemAsync('auth_token');
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-        }
-      } else {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-      }
+      const user = await fetchUserProfile(fbUser);
+      set({ user, isAuthenticated: true, isLoading: false });
     } catch (error) {
-      // Error loading user, clear token
-      await SecureStore.deleteItemAsync('auth_token');
+      console.error('Error loading user profile:', error);
+      // Signed in but profile unreachable (e.g. offline): still authenticated,
+      // with a minimal profile so the UI has a name/email to show.
       set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
+        user: {
+          id: fbUser.uid,
+          name: fbUser.displayName ?? '',
+          email: fbUser.email ?? '',
+          role: 'user',
+          credits: 0,
+          free_trial_used: false,
+          created_at: new Date().toISOString(),
+        },
+        isAuthenticated: true,
         isLoading: false,
       });
     }

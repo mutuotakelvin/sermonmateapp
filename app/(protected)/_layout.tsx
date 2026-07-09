@@ -3,21 +3,19 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/stores/auth';
 
 export default function ProtectedLayout() {
-  const { isAuthenticated, isLoading, loadUser, token } = useAuthStore();
+  const { isAuthenticated, isLoading, loadUser } = useAuthStore();
 
   useEffect(() => {
-    // Only load user if we're not authenticated and not already loading
-    // The root index should have already loaded the user, but this is a safety check
-    // in case someone navigates directly to a protected route
-    if (!isAuthenticated && !isLoading && !token) {
+    // The root index should have already loaded the user; this is a safety check
+    // in case someone navigates directly to a protected route.
+    if (!isAuthenticated && !isLoading) {
       loadUser().catch((error) => {
         console.error('Error loading user:', error);
       });
     }
-  }, [isAuthenticated, isLoading, token, loadUser]);
+  }, [isAuthenticated, isLoading, loadUser]);
 
   if (isLoading) {
-    // You might want to show a loading screen here
     return null;
   }
 
