@@ -57,7 +57,16 @@ export default {
       // Make API URL available via expo-constants
       apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://sermonmate.bobakdevs.com/api/v1",
       // Make Gemini API key available
-      geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY
+      geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
+      // Firebase web app config (public identifiers, safe to commit)
+      firebase: {
+        apiKey: "AIzaSyBZKjgaSi_qd8inMx5R5VvYIJpGlWz32lA",
+        authDomain: "sermonmate-919e5.firebaseapp.com",
+        projectId: "sermonmate-919e5",
+        storageBucket: "sermonmate-919e5.firebasestorage.app",
+        messagingSenderId: "879460367628",
+        appId: "1:879460367628:web:fc17c7e93c90fafc309d29"
+      },
     }
   }
 };
