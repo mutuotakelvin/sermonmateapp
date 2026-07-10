@@ -1,15 +1,17 @@
-import React, { useState, useLayoutEffect, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import React, { useLayoutEffect, useState } from 'react';
 import {
-    Clipboard,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  TextInput,
+  View,
 } from 'react-native';
-import Collapsible from 'react-native-collapsible';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '@/components/ToastProvider';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
@@ -17,7 +19,6 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
 import { theme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
-import { Ionicons } from '@expo/vector-icons';
 
 interface SermonModalProps {
   visible: boolean;
@@ -26,9 +27,9 @@ interface SermonModalProps {
   topic: string;
   onClose: () => void;
   onSave: () => void;
+  loading?: boolean;
 }
 
-// 6 muted palette swatches mapped to warm editorial tokens
 // ids match Home card color ids: 1→sage, 2→sand, 3→dustyBlue, 4→olive, 5→blush, 6→rust
 const COLOR_OPTIONS = [
   { id: '1', color: theme.color.sage },
@@ -46,74 +47,56 @@ export default function SermonModal({
   topic,
   onClose,
   onSave,
+  loading = false,
 }: SermonModalProps) {
   const { showSuccess, showError, showInfo } = useToast();
-  const [versesExpanded, setVersesExpanded] = useState(true);
-  const [sermonExpanded, setSermonExpanded] = useState(false);
-  const [storyExpanded, setStoryExpanded] = useState(false);
   const [title, setTitle] = useState(topic);
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].id);
   const [saving, setSaving] = useState(false);
-  const [collapsibleKey, setCollapsibleKey] = useState(0);
 
-  // Determine which sermon data to use (savedSermon for editing, sermon for new)
-  const displaySermon = savedSermon ? {
-    verses: savedSermon.verses,
-    interpretation: savedSermon.interpretation,
-    story: savedSermon.story,
-  } : sermon;
+  const displaySermon = savedSermon
+    ? { verses: savedSermon.verses, interpretation: savedSermon.interpretation, story: savedSermon.story }
+    : sermon;
 
-  // Increment key when modal opens to force Collapsible remount
-  useEffect(() => {
-    if (visible) {
-      setCollapsibleKey(prev => prev + 1);
-      // Start collapsed, then expand after mount to trigger Collapsible animation
-      setVersesExpanded(false);
-      // Use requestAnimationFrame to ensure it happens after render
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setVersesExpanded(true);
-        });
-      });
-    }
-  }, [visible]);
+  // A mood entry's saved title is prefixed "Mood: " — used for the header label.
+  const isEncouragement = !!savedSermon?.title?.startsWith('Mood:');
+  const headerLabel = isEncouragement ? 'Encouragement' : 'Sermon';
 
-  // Use useLayoutEffect to set state synchronously before render
   useLayoutEffect(() => {
-    if (visible) {
-      if (savedSermon) {
-        // Editing existing sermon
-        setTitle(savedSermon.title);
-        setSelectedColor(savedSermon.color);
-        setSermonExpanded(false);
-        setStoryExpanded(false);
-      } else if (sermon) {
-        // New sermon - ensure verses are expanded when sermon is available
-        setTitle(topic);
-        setSelectedColor(COLOR_OPTIONS[0].id);
-        setSermonExpanded(false);
-        setStoryExpanded(false);
-      } else if (topic) {
-        // Modal opened but sermon not yet generated
-        setTitle(topic);
-        setSelectedColor(COLOR_OPTIONS[0].id);
-        setSermonExpanded(false);
-        setStoryExpanded(false);
-      }
+    if (!visible) return;
+    if (savedSermon) {
+      setTitle(savedSermon.title);
+      setSelectedColor(savedSermon.color);
     } else {
-      // Reset state when modal closes
-      setVersesExpanded(true);
-      setSermonExpanded(false);
-      setStoryExpanded(false);
+      setTitle(topic);
+      setSelectedColor(COLOR_OPTIONS[0].id);
     }
-  }, [visible, topic, savedSermon, sermon]);
+  }, [visible, topic, savedSermon]);
 
   const handleCopy = async (text: string, section: string) => {
     try {
-      Clipboard.setString(text);
-      showInfo('Copied!', `${section} copied to clipboard`);
+      await Clipboard.setStringAsync(text);
+      showInfo('Copied', `${section} copied to clipboard`);
     } catch {
       showError('Error', 'Failed to copy to clipboard');
+    }
+  };
+
+  const handleShare = async () => {
+    if (!displaySermon) return;
+    const body = [
+      title,
+      '',
+      displaySermon.interpretation,
+      '',
+      displaySermon.verses.join('\n'),
+      '',
+      displaySermon.story,
+    ].join('\n');
+    try {
+      await Share.share({ message: body });
+    } catch {
+      showError('Share failed', 'Could not open the share sheet');
     }
   };
 
@@ -122,32 +105,28 @@ export default function SermonModal({
       showError('Error', 'Please enter a title for your sermon');
       return;
     }
-
     setSaving(true);
     try {
       if (savedSermon?.id) {
-        // Update existing sermon
-        const updatedSermon: SavedSermon = {
+        await updateSermon({
           ...savedSermon,
           title: title.trim(),
           verses: displaySermon.verses,
           interpretation: displaySermon.interpretation,
           story: displaySermon.story,
           color: selectedColor,
-        };
-        await updateSermon(updatedSermon);
-        showSuccess('Sermon updated', 'Your sermon has been updated successfully');
+        });
+        showSuccess('Sermon updated', 'Your sermon has been updated');
       } else {
-        // Create new sermon
         await saveSermonApi({
           title: title.trim(),
           verses: displaySermon.verses || [],
           interpretation: displaySermon.interpretation || '',
           story: displaySermon.story || '',
           color: selectedColor,
-          topic: topic,
+          topic,
         });
-        showSuccess('Sermon saved', 'Your sermon has been saved successfully');
+        showSuccess('Sermon saved', 'Your sermon has been saved');
       }
       onSave();
       onClose();
@@ -159,320 +138,152 @@ export default function SermonModal({
     }
   };
 
-  const getVersesText = () => {
-    if (!displaySermon) return '';
-    return displaySermon.verses.join('\n\n');
-  };
-
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={styles.modalContent}>
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <AppText variant="display" style={styles.modalTitle}>Generated Sermon</AppText>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.color.textMuted} />
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
+      <SafeAreaView style={styles.screen}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable onPress={onClose} style={styles.iconButton} hitSlop={8}>
+            <Ionicons name="chevron-back" size={24} color={theme.color.text} />
+          </Pressable>
+          <AppText variant="title">{headerLabel}</AppText>
+          {displaySermon && !loading ? (
+            <Pressable onPress={handleShare} style={styles.iconButton} hitSlop={8}>
+              <Ionicons name="share-outline" size={22} color={theme.color.text} />
             </Pressable>
-          </View>
+          ) : (
+            <View style={styles.iconButton} />
+          )}
+        </View>
 
-          {displaySermon && (
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={true}
-              nestedScrollEnabled={true}
-            >
-            {/* Title Input */}
-            <View style={styles.titleSection}>
-              <AppText variant="label" style={styles.fieldLabel}>Title</AppText>
+        {loading || !displaySermon ? (
+          <View style={styles.loading}>
+            <ActivityIndicator size="large" color={theme.color.accent} />
+            <AppText variant="body" style={styles.loadingText}>Preparing your sermon…</AppText>
+          </View>
+        ) : (
+          <>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+              {/* Topic / title (editable for a new sermon, serif) */}
               <TextInput
-                style={styles.titleInput}
+                style={styles.title}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Enter sermon title"
+                placeholder="Sermon title"
                 placeholderTextColor={theme.color.textMuted}
                 editable={!savedSermon}
+                multiline
               />
-            </View>
 
-            {/* Verses Accordion */}
-            <Card style={styles.accordionCard}>
-              <Pressable
-                style={styles.accordionHeader}
-                onPress={() => setVersesExpanded(!versesExpanded)}
-              >
-                <AppText variant="title">Verses</AppText>
-                <View style={styles.accordionHeaderRight}>
-                  <Pressable
-                    style={styles.copyButton}
-                    onPress={() => handleCopy(getVersesText(), 'Verses')}
-                  >
-                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
-                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
-                  </Pressable>
-                  <Ionicons
-                    name={versesExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={theme.color.textMuted}
-                  />
-                </View>
-              </Pressable>
-              <Collapsible
-                collapsed={!versesExpanded}
-                key={`verses-${collapsibleKey}-${savedSermon?.id || (sermon ? 'new' : 'none')}`}
-              >
-                <View style={styles.accordionContent}>
-                  {displaySermon.verses.map((verse, index) => (
-                    <AppText key={index} variant="verse" style={styles.verseText}>
-                      {verse}
-                    </AppText>
-                  ))}
-                </View>
-              </Collapsible>
-            </Card>
+              {/* THE MESSAGE — leads */}
+              <View style={styles.sectionHeadRow}>
+                <AppText variant="label">The Message</AppText>
+                <Pressable onPress={() => handleCopy(displaySermon.interpretation || '', 'Message')} hitSlop={8}>
+                  <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                </Pressable>
+              </View>
+              <AppText variant="body" style={styles.messageBody}>{displaySermon.interpretation}</AppText>
 
-            {/* Sermon Accordion */}
-            <Card style={styles.accordionCard}>
-              <Pressable
-                style={styles.accordionHeader}
-                onPress={() => setSermonExpanded(!sermonExpanded)}
-              >
-                <AppText variant="title">Sermon</AppText>
-                <View style={styles.accordionHeaderRight}>
-                  <Pressable
-                    style={styles.copyButton}
-                    onPress={() => handleCopy(displaySermon.interpretation || '', 'Sermon')}
-                  >
-                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
-                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
-                  </Pressable>
-                  <Ionicons
-                    name={sermonExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={theme.color.textMuted}
-                  />
-                </View>
-              </Pressable>
-              <Collapsible collapsed={!sermonExpanded}>
-                <View style={styles.accordionContent}>
-                  <AppText variant="body">{displaySermon.interpretation}</AppText>
-                </View>
-              </Collapsible>
-            </Card>
+              {/* SCRIPTURE — verses as inline cards */}
+              <View style={styles.sectionHeadRow}>
+                <AppText variant="label">Scripture</AppText>
+                <Pressable onPress={() => handleCopy(displaySermon.verses.join('\n\n'), 'Scripture')} hitSlop={8}>
+                  <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                </Pressable>
+              </View>
+              {displaySermon.verses.map((verse, i) => (
+                <Card key={i} tone="blush" style={styles.verseCard}>
+                  <AppText variant="verse">{verse}</AppText>
+                </Card>
+              ))}
 
-            {/* Story Accordion */}
-            <Card style={styles.accordionCard}>
-              <Pressable
-                style={styles.accordionHeader}
-                onPress={() => setStoryExpanded(!storyExpanded)}
-              >
-                <AppText variant="title">Story</AppText>
-                <View style={styles.accordionHeaderRight}>
-                  <Pressable
-                    style={styles.copyButton}
-                    onPress={() => handleCopy(displaySermon.story || '', 'Story')}
-                  >
-                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
-                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
-                  </Pressable>
-                  <Ionicons
-                    name={storyExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={theme.color.textMuted}
-                  />
-                </View>
-              </Pressable>
-              <Collapsible collapsed={!storyExpanded}>
-                <View style={styles.accordionContent}>
-                  <AppText variant="body">{displaySermon.story}</AppText>
-                </View>
-              </Collapsible>
-            </Card>
+              {/* A STORY */}
+              <View style={styles.sectionHeadRow}>
+                <AppText variant="label">A Story</AppText>
+                <Pressable onPress={() => handleCopy(displaySermon.story || '', 'Story')} hitSlop={8}>
+                  <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                </Pressable>
+              </View>
+              <AppText variant="body" style={styles.messageBody}>{displaySermon.story}</AppText>
 
-            {/* Color Picker */}
-            <View style={styles.colorSection}>
-              <AppText variant="label" style={styles.fieldLabel}>Choose Card Color</AppText>
-              <View style={styles.colorPicker}>
+              {/* Card color row (small) */}
+              <AppText variant="label" style={styles.colorLabel}>Card color</AppText>
+              <View style={styles.colorRow}>
                 {COLOR_OPTIONS.map((option) => (
-                  <Pressable
-                    key={option.id}
-                    onPress={() => setSelectedColor(option.id)}
-                    style={styles.colorOption}
-                  >
+                  <Pressable key={option.id} onPress={() => setSelectedColor(option.id)}>
                     <View
                       style={[
-                        styles.colorCircle,
+                        styles.swatch,
                         { backgroundColor: option.color },
-                        selectedColor === option.id && styles.colorCircleSelected,
+                        selectedColor === option.id && styles.swatchSelected,
                       ]}
                     >
                       {selectedColor === option.id && (
-                        <Ionicons name="checkmark" size={18} color={theme.color.accentText} />
+                        <Ionicons name="checkmark" size={16} color={theme.color.accentText} />
                       )}
                     </View>
                   </Pressable>
                 ))}
               </View>
-            </View>
-
-            {/* Save / Update Button */}
-            <PrimaryButton
-              label={savedSermon ? 'Update Sermon' : 'Save Sermon'}
-              onPress={handleSave}
-              loading={saving}
-              style={styles.saveButton}
-            />
-
-            {/* AI Disclaimer */}
-            {!savedSermon && (
-              <AppText variant="caption" style={styles.aiDisclaimer}>
-                Powered by AI
-              </AppText>
-            )}
             </ScrollView>
-          )}
-        </View>
-      </View>
+
+            {/* Sticky Save bar */}
+            <View style={styles.saveBar}>
+              <PrimaryButton
+                label={savedSermon ? 'Update' : 'Save sermon'}
+                onPress={handleSave}
+                loading={saving}
+                style={styles.saveButton}
+              />
+              <Pressable onPress={handleShare} style={styles.shareBtn}>
+                <Ionicons name="share-outline" size={22} color={theme.color.text} />
+              </Pressable>
+            </View>
+          </>
+        )}
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  screen: { flex: 1, backgroundColor: theme.color.paper },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: theme.space.lg, paddingVertical: theme.space.md,
+    borderBottomWidth: 1, borderBottomColor: theme.color.border,
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(42, 36, 32, 0.45)',
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: theme.space.lg },
+  loadingText: { color: theme.color.textMuted },
+  scroll: { flex: 1 },
+  scrollContent: { padding: theme.space.xl, paddingBottom: theme.space.xxl },
+  title: {
+    fontFamily: theme.font.serif, fontSize: 26, lineHeight: 32, color: theme.color.text,
+    marginBottom: theme.space.lg, padding: 0,
   },
-  modalContent: {
-    backgroundColor: theme.color.paper,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
-    maxHeight: '90%',
-    flex: 1,
-    shadowColor: theme.color.charcoal,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.18,
-    shadowRadius: theme.space.sm,
-    elevation: 10,
+  sectionHeadRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: theme.space.xl, marginBottom: theme.space.sm,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.space.xl,
-    paddingVertical: theme.space.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.color.border,
+  messageBody: { lineHeight: 24 },
+  verseCard: { marginBottom: theme.space.md },
+  colorLabel: { marginTop: theme.space.xl, marginBottom: theme.space.sm },
+  colorRow: { flexDirection: 'row', gap: theme.space.md },
+  swatch: {
+    width: 36, height: 36, borderRadius: theme.radius.pill,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent',
   },
-  modalTitle: {
-    fontSize: 22,
+  swatchSelected: { borderColor: theme.color.text },
+  saveBar: {
+    flexDirection: 'row', alignItems: 'center', gap: theme.space.md,
+    paddingHorizontal: theme.space.lg, paddingTop: theme.space.md, paddingBottom: theme.space.md,
+    borderTopWidth: 1, borderTopColor: theme.color.border, backgroundColor: theme.color.surface,
   },
-  closeButton: {
-    padding: theme.space.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: theme.space.xl,
-    paddingBottom: theme.space.xxl,
-  },
-  titleSection: {
-    marginBottom: theme.space.xl,
-  },
-  fieldLabel: {
-    marginBottom: theme.space.sm,
-  },
-  titleInput: {
-    borderWidth: 1,
-    borderColor: theme.color.border,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: theme.space.lg,
-    paddingVertical: theme.space.md,
-    fontSize: 16,
-    fontFamily: theme.font.sans,
-    color: theme.color.text,
-    backgroundColor: theme.color.surface,
-  },
-  accordionCard: {
-    marginBottom: theme.space.md,
-    padding: 0,
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.space.lg,
-    paddingVertical: theme.space.md,
-  },
-  accordionHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space.md,
-  },
-  copyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space.xs,
-    paddingHorizontal: theme.space.sm,
-    paddingVertical: theme.space.xs,
-  },
-  copyButtonText: {
-    fontSize: 14,
-    color: theme.color.accent,
-    fontFamily: theme.font.sansMedium,
-  },
-  accordionContent: {
-    paddingHorizontal: theme.space.lg,
-    paddingBottom: theme.space.lg,
-    borderTopWidth: 1,
-    borderTopColor: theme.color.border,
-    paddingTop: theme.space.md,
-  },
-  verseText: {
-    marginBottom: theme.space.md,
-  },
-  colorSection: {
-    marginTop: theme.space.sm,
-    marginBottom: theme.space.xl,
-  },
-  colorPicker: {
-    flexDirection: 'row',
-    gap: theme.space.md,
-    flexWrap: 'wrap',
-  },
-  colorOption: {
-    marginRight: theme.space.xs,
-  },
-  colorCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  colorCircleSelected: {
-    borderColor: theme.color.text,
-    borderWidth: 2,
-  },
-  saveButton: {
-    marginTop: theme.space.sm,
-  },
-  aiDisclaimer: {
-    textAlign: 'center',
-    marginTop: theme.space.md,
-    fontStyle: 'italic',
+  saveButton: { flex: 1 },
+  shareBtn: {
+    width: 52, height: 52, borderRadius: theme.radius.md,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface,
   },
 });
