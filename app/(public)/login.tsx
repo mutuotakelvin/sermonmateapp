@@ -1,17 +1,18 @@
 import { useToast } from '@/components/ToastProvider';
 import { useAuthStore } from '@/lib/stores/auth';
+import { theme } from '@/lib/theme';
+import AppText from '@/components/ui/AppText';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import Screen from '@/components/ui/Screen';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -22,9 +23,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const { login } = useAuthStore();
-  const { showError, showSuccess } = useToast();
+  const { showError } = useToast();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,16 +35,16 @@ export default function LoginScreen() {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLoading(true);
-    
+
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
         router.replace('/(protected)');
       } else {
         showError('Login Failed', result.message || 'Invalid credentials');
       }
-    } catch (error) {
+    } catch {
       showError('Error', 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -51,258 +52,187 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <LinearGradient
-        colors={['#E6F3FF', '#D6EBFF', '#C7E3FF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
+    <Screen style={styles.screenInner}>
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.content}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../../assets/images/icon.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.logoText}>SermonMate</Text>
-          </View>
-
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Email address"
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Wordmark */}
+            <View style={styles.wordmarkContainer}>
+              <AppText variant="display" style={styles.wordmark}>SermonMate</AppText>
+              <View style={styles.divider} />
             </View>
 
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  placeholderTextColor="#9ca3af"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color="#6b7280"
+            <AppText variant="title" style={styles.title}>Welcome Back</AppText>
+            <AppText variant="body" style={styles.subtitle}>Sign in to continue your journey</AppText>
+
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="mail-outline" size={20} color={theme.color.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Email address"
+                    placeholderTextColor={theme.color.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
-                </TouchableOpacity>
+                </View>
               </View>
+
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="lock-closed-outline" size={20} color={theme.color.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Password"
+                    placeholderTextColor={theme.color.textMuted}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                      size={20}
+                      color={theme.color.textMuted}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <PrimaryButton
+                label={isLoading ? 'Signing in...' : 'Sign in'}
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.submitButton}
+              />
             </View>
 
-            <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#1f2937', '#374151']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}
-              >
-                <Text style={styles.buttonText}>
-                  {isLoading ? 'Signing In...' : 'Sign In'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.footer}>
+              <AppText variant="body" style={styles.footerText}>Don't have an account? </AppText>
+              <Link href="/sign-up" asChild>
+                <TouchableOpacity>
+                  <AppText variant="body" style={styles.linkText}>Sign up</AppText>
+                </TouchableOpacity>
+              </Link>
+            </View>
           </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Link href="/sign-up" asChild>
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-
-          {/* Dev: Clear onboarding button */}
-          {/* {__DEV__ && (
-            <TouchableOpacity
-              onPress={async () => {
-                await AsyncStorage.removeItem('onboarding_completed');
-                showSuccess('Onboarding cleared', 'Restart the app to see onboarding again');
-              }}
-              style={styles.devButton}
-            >
-              <Text style={styles.devButtonText}>🧹 Clear Onboarding (Dev)</Text>
-            </TouchableOpacity>
-          )} */}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenInner: {
+    paddingHorizontal: 0,
+  },
+  kav: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: theme.space.xxl,
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: theme.space.xl,
     justifyContent: 'center',
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
-  logoContainer: {
+  wordmarkContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: theme.space.xxl,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
+  wordmark: {
+    fontSize: 32,
+    textAlign: 'center',
+    color: theme.color.accent,
   },
-  logoText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    letterSpacing: -0.5,
+  divider: {
+    marginTop: theme.space.md,
+    width: 40,
+    height: 2,
+    backgroundColor: theme.color.sand,
+    borderRadius: theme.radius.pill,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 8,
-    color: '#1f2937',
-    letterSpacing: -0.5,
+    marginBottom: theme.space.sm,
+    color: theme.color.text,
   },
   subtitle: {
-    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 40,
-    color: '#6b7280',
+    marginBottom: theme.space.xxl,
+    color: theme.color.textMuted,
   },
   form: {
-    marginBottom: 32,
+    marginBottom: theme.space.xxl,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: theme.space.xl,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingHorizontal: 16,
+    borderColor: theme.color.border,
+    paddingHorizontal: theme.space.lg,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: theme.color.charcoal,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.04,
         shadowRadius: 8,
       },
       android: {
-        elevation: 2,
+        elevation: 1,
       },
     }),
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: theme.space.md,
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: '#1f2937',
+    paddingVertical: theme.space.lg,
+    fontSize: 15,
+    fontFamily: theme.font.sans,
+    color: theme.color.text,
   },
   eyeIcon: {
-    padding: 4,
+    padding: theme.space.xs,
   },
-  button: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  submitButton: {
+    marginTop: theme.space.sm,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: theme.space.sm,
   },
   footerText: {
-    fontSize: 16,
-    color: '#6b7280',
+    color: theme.color.textMuted,
   },
   linkText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  devButton: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  devButtonText: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
+    color: theme.color.accent,
+    fontFamily: theme.font.sansSemibold,
   },
 });
