@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Use npm/package-lock.json as the source of truth for builds (EAS bun ≠ local bun format)
+bun.lockb
