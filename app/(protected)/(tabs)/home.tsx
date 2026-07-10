@@ -2,6 +2,7 @@ import ProfileDrawer from "@/components/ProfileDrawer";
 import SermonModal from "@/components/SermonModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import MoodModal from "@/components/MoodModal";
+import VerseOfDayCard from "@/components/VerseOfDayCard";
 import { useToast } from "@/components/ToastProvider";
 import { generateSermon } from "@/lib/sermonAi";
 import { getSermons, deleteSermon } from "@/lib/sermonApi";
@@ -167,6 +168,9 @@ export default function Home() {
             </Pressable>
           </View>
         </View>
+
+        {/* Verse of the Day */}
+        <VerseOfDayCard />
 
         {/* Fixed Generate Card */}
         <View style={dynamicStyles.card}>
