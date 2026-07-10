@@ -1,48 +1,48 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   Pressable,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Calendar } from 'react-native-calendars';
-import { useThemeStore } from '@/lib/stores/theme';
 import { useMoodStore } from '@/lib/stores/mood';
 import type { MoodEntry, MoodType } from '@/lib/types';
 import SermonModal from '@/components/SermonModal';
+import MoodModal from '@/components/MoodModal';
+import Screen from '@/components/ui/Screen';
+import AppText from '@/components/ui/AppText';
+import Card from '@/components/ui/Card';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import { theme } from '@/lib/theme';
 
+// Muted per-mood tokens matching the warm editorial palette
 const MOOD_COLORS: Record<MoodType, string> = {
-  Happy: '#FCD34D',
-  Grateful: '#86EFAC',
-  Hopeful: '#60A5FA',
-  Peaceful: '#6EE7F9',
-  Anxious: '#FCD34D',
-  Sad: '#93C5FD',
-  Overwhelmed: '#F9A8D4',
-  Angry: '#F87171',
+  Happy: theme.color.sand,
+  Grateful: theme.color.sage,
+  Hopeful: theme.color.dustyBlue,
+  Peaceful: theme.color.blush,
+  Anxious: theme.color.olive,
+  Sad: theme.color.deepBlue,
+  Overwhelmed: theme.color.rust,
+  Angry: theme.color.rust,
 };
 
-
 export default function MoodTab() {
-  const { theme } = useThemeStore();
   const { moodEntries, loadMoodEntries } = useMoodStore();
   const [selectedEntry, setSelectedEntry] = useState<MoodEntry | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [sermonModalVisible, setSermonModalVisible] = useState(false);
-  
+  const [moodModalVisible, setMoodModalVisible] = useState(false);
+
   // Month navigation
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-
-  const isDark = theme === 'dark';
-  const dynamicStyles = getStyles(isDark);
 
   useEffect(() => {
     loadMoodEntries();
@@ -59,11 +59,11 @@ export default function MoodTab() {
   // Create markedDates object for react-native-calendars
   const markedDates = useMemo(() => {
     const marked: Record<string, any> = {};
-    
+
     moodEntries.forEach((entry) => {
       const dateStr = entry.date.split('T')[0];
       const entryDate = new Date(entry.date);
-      
+
       // Only mark dates in the current month
       if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
         if (!marked[dateStr]) {
@@ -76,7 +76,7 @@ export default function MoodTab() {
         marked[dateStr].entries.push(entry);
       }
     });
-    
+
     return marked;
   }, [moodEntries, currentMonth, currentYear]);
 
@@ -109,10 +109,10 @@ export default function MoodTab() {
     const dayEntries = moodEntries.filter(
       (e) => e.date.split('T')[0] === dateStr
     );
-    
+
     if (dayEntries.length > 0) {
       // If multiple entries, show the most recent one
-      const sortedEntries = dayEntries.sort((a, b) => 
+      const sortedEntries = dayEntries.sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
       setSelectedEntry(sortedEntries[0]);
@@ -148,29 +148,32 @@ export default function MoodTab() {
     }
   };
 
-  const canGoNext = currentYear < today.getFullYear() || 
+  const canGoNext = currentYear < today.getFullYear() ||
     (currentYear === today.getFullYear() && currentMonth < today.getMonth());
 
-  // Calendar theme configuration
+  // Calendar theme configuration using warm editorial tokens
   const calendarTheme = useMemo(() => ({
-    backgroundColor: isDark ? '#1f2937' : '#f9fafb',
-    calendarBackground: isDark ? '#1f2937' : '#f9fafb',
-    textSectionTitleColor: isDark ? '#9ca3af' : '#6b7280',
-    selectedDayBackgroundColor: '#007AFF',
-    selectedDayTextColor: '#fff',
-    todayTextColor: '#007AFF',
-    dayTextColor: isDark ? '#fff' : '#111827',
-    textDisabledColor: isDark ? '#6b7280' : '#9ca3af',
-    dotColor: '#007AFF',
-    selectedDotColor: '#fff',
-    arrowColor: isDark ? '#fff' : '#111827',
-    monthTextColor: isDark ? '#fff' : '#111827',
+    backgroundColor: theme.color.surface,
+    calendarBackground: theme.color.surface,
+    textSectionTitleColor: theme.color.textMuted,
+    selectedDayBackgroundColor: theme.color.accent,
+    selectedDayTextColor: theme.color.accentText,
+    todayTextColor: theme.color.accent,
+    dayTextColor: theme.color.text,
+    textDisabledColor: theme.color.border,
+    dotColor: theme.color.accent,
+    selectedDotColor: theme.color.accentText,
+    arrowColor: theme.color.text,
+    monthTextColor: theme.color.text,
+    textDayFontFamily: theme.font.sans,
+    textMonthFontFamily: theme.font.sansSemibold,
+    textDayHeaderFontFamily: theme.font.sansMedium,
     textDayFontWeight: '500' as const,
     textMonthFontWeight: '600' as const,
     textDayHeaderFontWeight: '600' as const,
     textDayFontSize: 15,
-    textMonthFontSize: 18,
-    textDayHeaderFontSize: 14,
+    textMonthFontSize: 16,
+    textDayHeaderFontSize: 13,
     'stylesheet.calendar.header': {
       week: {
         marginTop: 5,
@@ -179,66 +182,60 @@ export default function MoodTab() {
         paddingHorizontal: 0,
       },
     },
-    'stylesheet.day.basic': {
-      today: {
-        backgroundColor: isDark ? '#1e3a5f' : '#eff6ff',
-        borderWidth: 2.5,
-        borderColor: '#007AFF',
-      },
-      todayText: {
-        color: '#007AFF',
-        fontWeight: '700',
-      },
-    },
-  }), [isDark]);
+  }), []);
 
   return (
-    <SafeAreaView style={dynamicStyles.container}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      
+    <Screen style={styles.screenInner}>
+      <StatusBar style="dark" />
+
       {/* Header */}
-      <View style={dynamicStyles.header}>
-        <View style={{ width: 40 }} />
-        <Text style={dynamicStyles.headerTitle}>Mood Calendar</Text>
-        <View style={{ width: 40 }} />
+      <View style={styles.header}>
+        <AppText variant="display">Mood Calendar</AppText>
       </View>
 
       <ScrollView
-        style={dynamicStyles.scrollView}
-        contentContainerStyle={dynamicStyles.scrollContent}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* "How do you feel today?" entry point */}
+        <PrimaryButton
+          label="How do you feel today?"
+          onPress={() => setMoodModalVisible(true)}
+          style={styles.checkinButton}
+        />
+
         {/* Month Navigation */}
-        <View style={dynamicStyles.monthNavigation}>
+        <View style={styles.monthNavigation}>
           <Pressable
             onPress={handlePreviousMonth}
-            style={dynamicStyles.monthNavButton}
+            style={styles.monthNavButton}
           >
-            <Ionicons name="chevron-back" size={20} color={isDark ? "#fff" : "#111827"} />
+            <Ionicons name="chevron-back" size={20} color={theme.color.text} />
           </Pressable>
-          <Pressable style={dynamicStyles.monthSelector}>
-            <Ionicons name="calendar-outline" size={20} color={isDark ? "#9ca3af" : "#6b7280"} />
-            <Text style={dynamicStyles.monthSelectorText}>
+          <Pressable style={styles.monthSelector}>
+            <Ionicons name="calendar-outline" size={18} color={theme.color.textMuted} />
+            <AppText variant="title" style={styles.monthSelectorText}>
               {monthName} {currentYear}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color={isDark ? "#9ca3af" : "#6b7280"} />
+            </AppText>
+            <Ionicons name="chevron-down" size={16} color={theme.color.textMuted} />
           </Pressable>
           <Pressable
             onPress={handleNextMonth}
-            style={[dynamicStyles.monthNavButton, !canGoNext && dynamicStyles.monthNavButtonDisabled]}
+            style={[styles.monthNavButton, !canGoNext && styles.monthNavButtonDisabled]}
             disabled={!canGoNext}
           >
-            <Ionicons 
-              name="chevron-forward" 
-              size={20} 
-              color={!canGoNext ? (isDark ? "#4b5563" : "#9ca3af") : (isDark ? "#fff" : "#111827")} 
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={!canGoNext ? theme.color.border : theme.color.text}
             />
           </Pressable>
         </View>
 
         {/* Calendar */}
-        <View style={dynamicStyles.calendarSection}>
-          <View style={dynamicStyles.calendarContainer}>
+        <View style={styles.calendarSection}>
+          <Card style={styles.calendarCard}>
             <Calendar
               current={currentDateString}
               onDayPress={handleDayPress}
@@ -255,55 +252,55 @@ export default function MoodTab() {
                 <Ionicons
                   name={direction === 'left' ? 'chevron-back' : 'chevron-forward'}
                   size={20}
-                  color={direction === 'right' && !canGoNext 
-                    ? (isDark ? '#4b5563' : '#9ca3af')
-                    : (isDark ? '#fff' : '#111827')}
+                  color={direction === 'right' && !canGoNext
+                    ? theme.color.border
+                    : theme.color.text}
                 />
               )}
             />
-          </View>
+          </Card>
         </View>
 
         {/* Statistics Section */}
-        <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>Statistics</Text>
-          <View style={dynamicStyles.statsContainer}>
-            <View style={dynamicStyles.statCard}>
-              <Text style={dynamicStyles.statValue}>{totalEntries}</Text>
-              <Text style={dynamicStyles.statLabel}>Total Entries</Text>
-            </View>
-            <View style={dynamicStyles.statCard}>
-              <Text style={dynamicStyles.statValue}>{mostCommonMood}</Text>
-              <Text style={dynamicStyles.statLabel}>Most Common</Text>
-            </View>
+        <View style={styles.section}>
+          <AppText variant="title" style={styles.sectionTitle}>Statistics</AppText>
+          <View style={styles.statsContainer}>
+            <Card style={styles.statCard}>
+              <AppText variant="display" style={styles.statValue}>{totalEntries}</AppText>
+              <AppText variant="caption" style={styles.statLabel}>Total Entries</AppText>
+            </Card>
+            <Card style={styles.statCard}>
+              <AppText variant="display" style={styles.statValueMood}>{mostCommonMood}</AppText>
+              <AppText variant="caption" style={styles.statLabel}>Most Common</AppText>
+            </Card>
           </View>
         </View>
 
         {/* Mood Distribution */}
-        <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>Mood Distribution</Text>
-          <View style={dynamicStyles.distributionContainer}>
+        <View style={styles.section}>
+          <AppText variant="title" style={styles.sectionTitle}>Mood Distribution</AppText>
+          <Card>
             {Object.entries(moodCounts).map(([mood, count]) => {
               if (count === 0) return null;
               const percentage = totalEntries > 0 ? (count / totalEntries) * 100 : 0;
               return (
-                <View key={mood} style={dynamicStyles.distributionItem}>
-                  <View style={dynamicStyles.distributionHeader}>
+                <View key={mood} style={styles.distributionItem}>
+                  <View style={styles.distributionHeader}>
                     <View
                       style={[
-                        dynamicStyles.distributionDot,
+                        styles.distributionDot,
                         { backgroundColor: MOOD_COLORS[mood as MoodType] },
                       ]}
                     />
-                    <Text style={dynamicStyles.distributionLabel}>{mood}</Text>
-                    <Text style={dynamicStyles.distributionCount}>{count}</Text>
+                    <AppText variant="body" style={styles.distributionLabel}>{mood}</AppText>
+                    <AppText variant="caption" style={styles.distributionCount}>{count}</AppText>
                   </View>
-                  <View style={dynamicStyles.distributionBar}>
+                  <View style={styles.distributionBar}>
                     <View
                       style={[
-                        dynamicStyles.distributionBarFill,
+                        styles.distributionBarFill,
                         {
-                          width: `${percentage}%`,
+                          width: `${percentage}%` as any,
                           backgroundColor: MOOD_COLORS[mood as MoodType],
                         },
                       ]}
@@ -312,7 +309,7 @@ export default function MoodTab() {
                 </View>
               );
             })}
-          </View>
+          </Card>
         </View>
       </ScrollView>
 
@@ -323,87 +320,87 @@ export default function MoodTab() {
         transparent={true}
         onRequestClose={() => setDetailModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={modalStyles.modalOverlay}>
           <Pressable
-            style={styles.modalBackdrop}
+            style={modalStyles.modalBackdrop}
             onPress={() => setDetailModalVisible(false)}
           />
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#1f2937' : '#fff' }]}>
+          <View style={modalStyles.modalContent}>
             {selectedEntry && (
               <>
-                <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: isDark ? '#fff' : '#111827' }]}>
+                <View style={modalStyles.modalHeader}>
+                  <AppText variant="title" style={modalStyles.modalTitle}>
                     {new Date(selectedEntry.date).toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
-                  </Text>
+                  </AppText>
                   <Pressable onPress={() => setDetailModalVisible(false)}>
-                    <Ionicons name="close" size={24} color={isDark ? '#fff' : '#111827'} />
+                    <Ionicons name="close" size={24} color={theme.color.text} />
                   </Pressable>
                 </View>
-                <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-                  <View style={styles.moodBadge}>
+                <ScrollView style={modalStyles.modalScroll} showsVerticalScrollIndicator={false}>
+                  <View style={modalStyles.moodBadge}>
                     <View
                       style={[
-                        styles.moodBadgeDot,
+                        modalStyles.moodBadgeDot,
                         { backgroundColor: MOOD_COLORS[selectedEntry.mood] },
                       ]}
                     />
-                    <Text style={[styles.moodBadgeText, { color: isDark ? '#fff' : '#111827' }]}>
+                    <AppText variant="title" style={modalStyles.moodBadgeText}>
                       {selectedEntry.mood}
-                    </Text>
+                    </AppText>
                   </View>
-                  
+
                   {selectedEntry.reason.length > 0 && (
-                    <View style={styles.detailSection}>
-                      <Text style={[styles.detailLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+                    <View style={modalStyles.detailSection}>
+                      <AppText variant="label" style={modalStyles.detailLabel}>
                         Reasons
-                      </Text>
-                      <View style={styles.reasonChips}>
+                      </AppText>
+                      <View style={modalStyles.reasonChips}>
                         {selectedEntry.reason.map((reason, idx) => (
                           <View
                             key={idx}
-                            style={[styles.reasonChip, { backgroundColor: isDark ? '#374151' : '#f3f4f6' }]}
+                            style={modalStyles.reasonChip}
                           >
-                            <Text style={[styles.reasonChipText, { color: isDark ? '#fff' : '#374151' }]}>
+                            <AppText variant="caption" style={modalStyles.reasonChipText}>
                               {reason}
-                            </Text>
+                            </AppText>
                           </View>
                         ))}
                       </View>
                     </View>
                   )}
-                  
+
                   {selectedEntry.customReason && (
-                    <View style={styles.detailSection}>
-                      <Text style={[styles.detailLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+                    <View style={modalStyles.detailSection}>
+                      <AppText variant="label" style={modalStyles.detailLabel}>
                         Additional Notes
-                      </Text>
-                      <Text style={[styles.detailText, { color: isDark ? '#fff' : '#111827' }]}>
+                      </AppText>
+                      <AppText variant="body">
                         {selectedEntry.customReason}
-                      </Text>
+                      </AppText>
                     </View>
                   )}
-                  
+
                   {selectedEntry.sermon && (
-                    <View style={styles.detailSection}>
-                      <Text style={[styles.detailLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+                    <View style={modalStyles.detailSection}>
+                      <AppText variant="label" style={modalStyles.detailLabel}>
                         AI Encouragement
-                      </Text>
-                      <Text
-                        style={[styles.detailText, { color: isDark ? '#fff' : '#111827' }]}
+                      </AppText>
+                      <AppText
+                        variant="body"
                         numberOfLines={3}
                       >
                         {selectedEntry.sermon.interpretation}
-                      </Text>
+                      </AppText>
                       <Pressable
-                        style={[styles.viewSermonButton, { backgroundColor: '#007AFF' }]}
+                        style={modalStyles.viewSermonButton}
                         onPress={handleViewSermon}
                       >
-                        <Text style={styles.viewSermonButtonText}>View Full Sermon</Text>
+                        <AppText style={modalStyles.viewSermonButtonText}>View Full Sermon</AppText>
                       </Pressable>
                     </View>
                   )}
@@ -430,147 +427,132 @@ export default function MoodTab() {
           }}
         />
       )}
-    </SafeAreaView>
+
+      {/* Mood Check-in Modal */}
+      <MoodModal
+        visible={moodModalVisible}
+        onClose={() => setMoodModalVisible(false)}
+        onComplete={() => {
+          setMoodModalVisible(false);
+          loadMoodEntries();
+        }}
+      />
+    </Screen>
   );
 }
 
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: isDark ? '#111827' : '#fff',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#374151' : '#e5e7eb',
-    },
-    backButton: {
-      padding: 8,
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: isDark ? '#fff' : '#111827',
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 32,
-    },
-    monthNavigation: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 24,
-      paddingHorizontal: 4,
-    },
-    monthNavButton: {
-      padding: 8,
-      borderRadius: 8,
-    },
-    monthNavButtonDisabled: {
-      opacity: 0.3,
-    },
-    monthSelector: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-    },
-    monthSelectorText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: isDark ? '#fff' : '#111827',
-    },
-    section: {
-      marginBottom: 32,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: isDark ? '#fff' : '#111827',
-      marginBottom: 16,
-    },
-    calendarSection: {
-      width: '100%',
-      marginBottom: 32,
-    },
-    calendarContainer: {
-      backgroundColor: isDark ? '#1f2937' : '#f9fafb',
-      borderRadius: 12,
-      padding: 8,
-      width: '100%',
-      overflow: 'hidden',
-    },
-    statsContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    statCard: {
-      flex: 1,
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: isDark ? '#1f2937' : '#f9fafb',
-      alignItems: 'center',
-    },
-    statValue: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: isDark ? '#fff' : '#111827',
-      marginBottom: 4,
-    },
-    statLabel: {
-      fontSize: 14,
-      color: isDark ? '#9ca3af' : '#6b7280',
-    },
-    distributionContainer: {
-      gap: 12,
-    },
-    distributionItem: {
-      gap: 8,
-    },
-    distributionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    distributionDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-    },
-    distributionLabel: {
-      flex: 1,
-      fontSize: 14,
-      fontWeight: '500',
-      color: isDark ? '#fff' : '#111827',
-    },
-    distributionCount: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: isDark ? '#9ca3af' : '#6b7280',
-    },
-    distributionBar: {
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: isDark ? '#374151' : '#e5e7eb',
-      overflow: 'hidden',
-    },
-    distributionBarFill: {
-      height: '100%',
-      borderRadius: 4,
-    },
-  });
-
 const styles = StyleSheet.create({
+  screenInner: {
+    paddingHorizontal: 0,
+  },
+  header: {
+    paddingHorizontal: theme.space.lg,
+    paddingTop: theme.space.lg,
+    paddingBottom: theme.space.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.color.border,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: theme.space.lg,
+    paddingBottom: theme.space.xxl,
+    gap: theme.space.xl,
+  },
+  checkinButton: {
+    marginBottom: theme.space.xs,
+  },
+  monthNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.space.xs,
+  },
+  monthNavButton: {
+    padding: theme.space.sm,
+    borderRadius: theme.radius.sm,
+  },
+  monthNavButtonDisabled: {
+    opacity: 0.3,
+  },
+  monthSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.sm,
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+  },
+  monthSelectorText: {
+    color: theme.color.text,
+  },
+  section: {
+    gap: theme.space.md,
+  },
+  sectionTitle: {
+    color: theme.color.text,
+  },
+  calendarSection: {
+    width: '100%',
+  },
+  calendarCard: {
+    padding: theme.space.sm,
+    overflow: 'hidden',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: theme.space.md,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: theme.space.xs,
+  },
+  statValue: {
+    color: theme.color.text,
+    fontSize: 28,
+  },
+  statValueMood: {
+    color: theme.color.text,
+    fontSize: 20,
+  },
+  statLabel: {
+    color: theme.color.textMuted,
+  },
+  distributionItem: {
+    gap: theme.space.sm,
+    marginBottom: theme.space.md,
+  },
+  distributionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.sm,
+  },
+  distributionDot: {
+    width: 12,
+    height: 12,
+    borderRadius: theme.radius.pill,
+  },
+  distributionLabel: {
+    flex: 1,
+    color: theme.color.text,
+  },
+  distributionCount: {
+    color: theme.color.textMuted,
+  },
+  distributionBar: {
+    height: 8,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.border,
+    overflow: 'hidden',
+  },
+  distributionBarFill: {
+    height: '100%',
+    borderRadius: theme.radius.pill,
+  },
+});
+
+const modalStyles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -580,79 +562,78 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: theme.color.paper,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
     maxHeight: '80%',
-    paddingTop: 20,
+    paddingTop: theme.space.xl,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: theme.space.xl,
+    paddingBottom: theme.space.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.color.border,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
     flex: 1,
+    color: theme.color.text,
   },
   modalScroll: {
-    padding: 20,
+    padding: theme.space.xl,
   },
   moodBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 24,
+    gap: theme.space.sm,
+    marginBottom: theme.space.xl,
   },
   moodBadgeDot: {
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: theme.radius.pill,
   },
   moodBadgeText: {
+    color: theme.color.text,
     fontSize: 20,
-    fontWeight: '700',
   },
   detailSection: {
-    marginBottom: 24,
+    marginBottom: theme.space.xl,
+    gap: theme.space.sm,
   },
   detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  detailText: {
-    fontSize: 15,
-    lineHeight: 22,
+    color: theme.color.textMuted,
+    marginBottom: theme.space.xs,
   },
   reasonChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: theme.space.sm,
   },
   reasonChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.color.border,
   },
   reasonChipText: {
-    fontSize: 14,
-    fontWeight: '500',
+    color: theme.color.text,
   },
   viewSermonButton: {
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    marginTop: theme.space.md,
+    paddingVertical: theme.space.md,
+    paddingHorizontal: theme.space.lg,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.accent,
     alignItems: 'center',
   },
   viewSermonButtonText: {
-    color: '#fff',
+    color: theme.color.accentText,
+    fontFamily: theme.font.sansSemibold,
     fontSize: 16,
-    fontWeight: '600',
   },
 });
