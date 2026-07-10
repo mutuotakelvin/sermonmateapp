@@ -1,18 +1,20 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Alert,
   ScrollView,
   Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/stores/auth';
 import Constants from 'expo-constants';
+import { theme } from '@/lib/theme';
+import Screen from '@/components/ui/Screen';
+import AppText from '@/components/ui/AppText';
+import Card from '@/components/ui/Card';
 
 export default function Profile() {
   const { user, logout } = useAuthStore();
@@ -27,15 +29,15 @@ export default function Profile() {
   };
 
   const getAvatarColor = () => {
-    if (!user?.name) return '#3b82f6';
+    if (!user?.name) return theme.color.accent;
     const colorOptions = [
-      '#3b82f6',
-      '#8b5cf6',
-      '#ec4899',
-      '#f59e0b',
-      '#10b981',
-      '#ef4444',
-      '#06b6d4',
+      theme.color.accent,
+      theme.color.sage,
+      theme.color.dustyBlue,
+      theme.color.rust,
+      theme.color.deepBlue,
+      theme.color.olive,
+      theme.color.danger,
     ];
     const index = user.name.charCodeAt(0) % colorOptions.length;
     return colorOptions[index];
@@ -89,160 +91,148 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <Screen>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <Card style={styles.profileCard}>
           <View style={[styles.avatarContainer, { backgroundColor: getAvatarColor() }]}>
-            <Text style={styles.avatarText}>{getInitials()}</Text>
+            <AppText style={styles.avatarText}>{getInitials()}</AppText>
           </View>
-          <Text style={styles.name}>{user?.name || 'User'}</Text>
-          <Text style={styles.email}>{user?.email || ''}</Text>
-        </View>
+          <AppText variant="display" style={styles.name}>{user?.name || 'User'}</AppText>
+          <AppText variant="caption" style={styles.email}>{user?.email || ''}</AppText>
+        </Card>
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.reportIssueButton} onPress={handleReportIssuePress}>
-            <Ionicons name="flag-outline" size={18} color="#111827" />
-            <Text style={styles.reportIssueText}>Report Issue</Text>
+        {/* Account Actions */}
+        <Card style={styles.actionsCard}>
+          <TouchableOpacity style={styles.actionRow} onPress={handleReportIssuePress} activeOpacity={0.7}>
+            <Ionicons name="flag-outline" size={20} color={theme.color.text} />
+            <AppText variant="body" style={styles.actionText}>Report Issue</AppText>
+            <Ionicons name="chevron-forward" size={16} color={theme.color.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
-            <Ionicons name="trash-outline" size={18} color="#ef4444" />
-            <Text style={styles.deleteAccountText}>Delete Account</Text>
-          </TouchableOpacity>
+          <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#fff" />
-            <Text style={styles.signOutText}>Sign Out</Text>
+          <TouchableOpacity style={styles.actionRow} onPress={handleDeleteAccount} activeOpacity={0.7}>
+            <Ionicons name="trash-outline" size={20} color={theme.color.danger} />
+            <AppText variant="body" style={styles.deleteText}>Delete Account</AppText>
+            <Ionicons name="chevron-forward" size={16} color={theme.color.danger} />
           </TouchableOpacity>
-        </View>
+        </Card>
 
-        {/* Links */}
+        {/* Sign Out */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={20} color={theme.color.accentText} />
+          <AppText style={styles.signOutText}>Sign Out</AppText>
+        </TouchableOpacity>
+
+        {/* Legal Links */}
         <View style={styles.linksContainer}>
           <TouchableOpacity onPress={handleTermsPress}>
-            <Text style={styles.linkText}>Terms and Conditions</Text>
+            <AppText variant="caption" style={styles.linkText}>Terms and Conditions</AppText>
           </TouchableOpacity>
+          <AppText variant="caption" style={styles.linkSeparator}>·</AppText>
           <TouchableOpacity onPress={handlePrivacyPolicyPress}>
-            <Text style={styles.linkText}>Privacy Policy</Text>
+            <AppText variant="caption" style={styles.linkText}>Privacy Policy</AppText>
           </TouchableOpacity>
         </View>
 
         {/* Version */}
-        <Text style={styles.versionText}>Version {Constants.expoConfig?.version || '1.0.0'}</Text>
-        <Text style={styles.versionText}>Powered by bobakdevs</Text>
+        <AppText variant="caption" style={styles.versionText}>
+          Version {Constants.expoConfig?.version || '1.0.0'}
+        </AppText>
+        <AppText variant="caption" style={styles.versionText}>Powered by bobakdevs</AppText>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
   scrollContent: {
-    padding: 24,
+    paddingTop: theme.space.xl,
     paddingBottom: 40,
+    gap: theme.space.lg,
   },
   profileCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: theme.space.xl,
   },
   avatarContainer: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: theme.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: theme.space.lg,
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontFamily: theme.font.serifItalic,
+    color: theme.color.accentText,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
+    marginBottom: theme.space.xs,
+    textAlign: 'center',
   },
   email: {
-    fontSize: 16,
-    color: '#6b7280',
+    textAlign: 'center',
   },
-  actionsContainer: {
-    gap: 12,
-    marginBottom: 24,
+  actionsCard: {
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    overflow: 'hidden',
   },
-  reportIssueButton: {
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 14,
-    gap: 8,
+    paddingVertical: theme.space.lg,
+    paddingHorizontal: theme.space.lg,
+    gap: theme.space.md,
   },
-  reportIssueText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#111827',
+  actionText: {
+    flex: 1,
+    color: theme.color.text,
   },
-  deleteAccountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ef4444',
-    borderRadius: 8,
-    padding: 14,
-    gap: 8,
+  deleteText: {
+    flex: 1,
+    color: theme.color.danger,
   },
-  deleteAccountText: {
-    color: '#ef4444',
-    fontSize: 15,
-    fontWeight: '600',
+  divider: {
+    height: 1,
+    backgroundColor: theme.color.border,
+    marginHorizontal: theme.space.lg,
   },
   signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
-    padding: 16,
-    gap: 8,
+    backgroundColor: theme.color.danger,
+    borderRadius: theme.radius.md,
+    paddingVertical: theme.space.lg,
+    gap: theme.space.sm,
   },
   signOutText: {
-    color: '#fff',
+    fontFamily: theme.font.sansSemibold,
     fontSize: 16,
-    fontWeight: '600',
+    color: theme.color.accentText,
   },
   linksContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
-    marginBottom: 16,
+    alignItems: 'center',
+    gap: theme.space.sm,
+    marginTop: theme.space.sm,
   },
   linkText: {
-    fontSize: 12,
-    color: '#9ca3af',
+    color: theme.color.textMuted,
     textDecorationLine: 'underline',
   },
+  linkSeparator: {
+    color: theme.color.textMuted,
+  },
   versionText: {
-    fontSize: 12,
-    color: '#9ca3af',
     textAlign: 'center',
-    marginBottom: 4,
   },
 });
