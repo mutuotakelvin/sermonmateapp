@@ -1,23 +1,23 @@
 import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
-    ActivityIndicator,
     Clipboard,
     Modal,
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput,
     View,
 } from 'react-native';
 import Collapsible from 'react-native-collapsible';
 
 import { useToast } from '@/components/ToastProvider';
+import AppText from '@/components/ui/AppText';
+import Card from '@/components/ui/Card';
+import PrimaryButton from '@/components/ui/PrimaryButton';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
+import { theme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
-import { colors } from '@/utils/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface SermonModalProps {
   visible: boolean;
@@ -28,14 +28,15 @@ interface SermonModalProps {
   onSave: () => void;
 }
 
-// 6 gradient color combinations for sermon cards
+// 6 muted palette swatches mapped to warm editorial tokens
+// ids match Home card color ids: 1→sage, 2→sand, 3→dustyBlue, 4→olive, 5→blush, 6→rust
 const COLOR_OPTIONS = [
-  { id: '1', colors: ['#6EE7F9', '#A78BFA'] as const }, // Blue to Purple
-  { id: '2', colors: ['#FCD34D', '#F59E0B'] as const }, // Yellow to Orange
-  { id: '3', colors: ['#60A5FA', '#3B82F6'] as const }, // Light Blue to Blue
-  { id: '4', colors: ['#86EFAC', '#22C55E'] as const }, // Light Green to Green
-  { id: '5', colors: ['#F9A8D4', '#EC4899'] as const }, // Pink to Rose
-  { id: '6', colors: ['#A78BFA', '#7C3AED'] as const }, // Purple to Dark Purple
+  { id: '1', color: theme.color.sage },
+  { id: '2', color: theme.color.sand },
+  { id: '3', color: theme.color.dustyBlue },
+  { id: '4', color: theme.color.olive },
+  { id: '5', color: theme.color.blush },
+  { id: '6', color: theme.color.rust },
 ];
 
 export default function SermonModal({
@@ -111,7 +112,7 @@ export default function SermonModal({
     try {
       Clipboard.setString(text);
       showInfo('Copied!', `${section} copied to clipboard`);
-    } catch (error) {
+    } catch {
       showError('Error', 'Failed to copy to clipboard');
     }
   };
@@ -163,8 +164,6 @@ export default function SermonModal({
     return displaySermon.verses.join('\n\n');
   };
 
-  const selectedColorOption = COLOR_OPTIONS.find(c => c.id === selectedColor);
-
   return (
     <Modal
       visible={visible}
@@ -175,10 +174,11 @@ export default function SermonModal({
       <View style={styles.modalOverlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.modalContent}>
+          {/* Header */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Generated Sermon</Text>
+            <AppText variant="display" style={styles.modalTitle}>Generated Sermon</AppText>
             <Pressable onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#374151" />
+              <Ionicons name="close" size={24} color={theme.color.textMuted} />
             </Pressable>
           </View>
 
@@ -191,114 +191,114 @@ export default function SermonModal({
             >
             {/* Title Input */}
             <View style={styles.titleSection}>
-              <Text style={styles.label}>Title</Text>
+              <AppText variant="label" style={styles.fieldLabel}>Title</AppText>
               <TextInput
                 style={styles.titleInput}
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Enter sermon title"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.color.textMuted}
                 editable={!savedSermon}
               />
             </View>
 
             {/* Verses Accordion */}
-            <View style={styles.accordionSection}>
+            <Card style={styles.accordionCard}>
               <Pressable
                 style={styles.accordionHeader}
                 onPress={() => setVersesExpanded(!versesExpanded)}
               >
-                <Text style={styles.accordionTitle}>Verses</Text>
+                <AppText variant="title">Verses</AppText>
                 <View style={styles.accordionHeaderRight}>
                   <Pressable
                     style={styles.copyButton}
                     onPress={() => handleCopy(getVersesText(), 'Verses')}
                   >
-                    <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                    <Text style={styles.copyButtonText}>Copy</Text>
+                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
                   </Pressable>
                   <Ionicons
                     name={versesExpanded ? 'chevron-up' : 'chevron-down'}
                     size={20}
-                    color="#6B7280"
+                    color={theme.color.textMuted}
                   />
                 </View>
               </Pressable>
-              <Collapsible 
+              <Collapsible
                 collapsed={!versesExpanded}
                 key={`verses-${collapsibleKey}-${savedSermon?.id || (sermon ? 'new' : 'none')}`}
               >
                 <View style={styles.accordionContent}>
                   {displaySermon.verses.map((verse, index) => (
-                    <Text key={index} style={styles.verseText}>
+                    <AppText key={index} variant="verse" style={styles.verseText}>
                       {verse}
-                    </Text>
+                    </AppText>
                   ))}
                 </View>
               </Collapsible>
-            </View>
+            </Card>
 
             {/* Sermon Accordion */}
-            <View style={styles.accordionSection}>
+            <Card style={styles.accordionCard}>
               <Pressable
                 style={styles.accordionHeader}
                 onPress={() => setSermonExpanded(!sermonExpanded)}
               >
-                <Text style={styles.accordionTitle}>Sermon</Text>
+                <AppText variant="title">Sermon</AppText>
                 <View style={styles.accordionHeaderRight}>
                   <Pressable
                     style={styles.copyButton}
                     onPress={() => handleCopy(displaySermon.interpretation || '', 'Sermon')}
                   >
-                    <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                    <Text style={styles.copyButtonText}>Copy</Text>
+                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
                   </Pressable>
                   <Ionicons
                     name={sermonExpanded ? 'chevron-up' : 'chevron-down'}
                     size={20}
-                    color="#6B7280"
+                    color={theme.color.textMuted}
                   />
                 </View>
               </Pressable>
               <Collapsible collapsed={!sermonExpanded}>
                 <View style={styles.accordionContent}>
-                  <Text style={styles.textContent}>{displaySermon.interpretation}</Text>
+                  <AppText variant="body">{displaySermon.interpretation}</AppText>
                 </View>
               </Collapsible>
-            </View>
+            </Card>
 
             {/* Story Accordion */}
-            <View style={styles.accordionSection}>
+            <Card style={styles.accordionCard}>
               <Pressable
                 style={styles.accordionHeader}
                 onPress={() => setStoryExpanded(!storyExpanded)}
               >
-                <Text style={styles.accordionTitle}>Story</Text>
+                <AppText variant="title">Story</AppText>
                 <View style={styles.accordionHeaderRight}>
                   <Pressable
                     style={styles.copyButton}
                     onPress={() => handleCopy(displaySermon.story || '', 'Story')}
                   >
-                    <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                    <Text style={styles.copyButtonText}>Copy</Text>
+                    <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                    <AppText variant="body" style={styles.copyButtonText}>Copy</AppText>
                   </Pressable>
                   <Ionicons
                     name={storyExpanded ? 'chevron-up' : 'chevron-down'}
                     size={20}
-                    color="#6B7280"
+                    color={theme.color.textMuted}
                   />
                 </View>
               </Pressable>
               <Collapsible collapsed={!storyExpanded}>
                 <View style={styles.accordionContent}>
-                  <Text style={styles.textContent}>{displaySermon.story}</Text>
+                  <AppText variant="body">{displaySermon.story}</AppText>
                 </View>
               </Collapsible>
-            </View>
+            </Card>
 
             {/* Color Picker */}
             <View style={styles.colorSection}>
-              <Text style={styles.label}>Choose Card Color</Text>
+              <AppText variant="label" style={styles.fieldLabel}>Choose Card Color</AppText>
               <View style={styles.colorPicker}>
                 {COLOR_OPTIONS.map((option) => (
                   <Pressable
@@ -306,42 +306,35 @@ export default function SermonModal({
                     onPress={() => setSelectedColor(option.id)}
                     style={styles.colorOption}
                   >
-                    <LinearGradient
-                      colors={option.colors}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                    <View
                       style={[
                         styles.colorCircle,
+                        { backgroundColor: option.color },
                         selectedColor === option.id && styles.colorCircleSelected,
                       ]}
                     >
                       {selectedColor === option.id && (
-                        <Ionicons name="checkmark" size={20} color="#fff" />
+                        <Ionicons name="checkmark" size={18} color={theme.color.accentText} />
                       )}
-                    </LinearGradient>
+                    </View>
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            {/* Save Button */}
-            <Pressable
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            {/* Save / Update Button */}
+            <PrimaryButton
+              label={savedSermon ? 'Update Sermon' : 'Save Sermon'}
               onPress={handleSave}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.saveButtonText}>{savedSermon ? 'Update Sermon' : 'Save Sermon'}</Text>
-              )}
-            </Pressable>
+              loading={saving}
+              style={styles.saveButton}
+            />
 
             {/* AI Disclaimer */}
             {!savedSermon && (
-              <Text style={styles.aiDisclaimer}>
+              <AppText variant="caption" style={styles.aiDisclaimer}>
                 Powered by AI
-              </Text>
+              </AppText>
             )}
             </ScrollView>
           )}
@@ -358,160 +351,128 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(42, 36, 32, 0.45)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: theme.color.paper,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
     maxHeight: '90%',
     flex: 1,
-    shadowColor: '#000',
+    shadowColor: theme.color.charcoal,
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.18,
+    shadowRadius: theme.space.sm,
     elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: theme.space.xl,
+    paddingVertical: theme.space.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.color.border,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: 22,
   },
   closeButton: {
-    padding: 4,
+    padding: theme.space.xs,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: theme.space.xl,
+    paddingBottom: theme.space.xxl,
   },
   titleSection: {
-    marginBottom: 24,
+    marginBottom: theme.space.xl,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+  fieldLabel: {
+    marginBottom: theme.space.sm,
   },
   titleInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderColor: theme.color.border,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: theme.space.lg,
+    paddingVertical: theme.space.md,
     fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#fff',
+    fontFamily: theme.font.sans,
+    color: theme.color.text,
+    backgroundColor: theme.color.surface,
   },
-  accordionSection: {
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    overflow: 'hidden',
+  accordionCard: {
+    marginBottom: theme.space.md,
+    padding: 0,
   },
   accordionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-  },
-  accordionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    paddingHorizontal: theme.space.lg,
+    paddingVertical: theme.space.md,
   },
   accordionHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: theme.space.md,
   },
   copyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: theme.space.xs,
+    paddingHorizontal: theme.space.sm,
+    paddingVertical: theme.space.xs,
   },
   copyButtonText: {
     fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
+    color: theme.color.accent,
+    fontFamily: theme.font.sansMedium,
   },
   accordionContent: {
-    padding: 16,
-    backgroundColor: '#fff',
+    paddingHorizontal: theme.space.lg,
+    paddingBottom: theme.space.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.color.border,
+    paddingTop: theme.space.md,
   },
   verseText: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  textContent: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
+    marginBottom: theme.space.md,
   },
   colorSection: {
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: theme.space.sm,
+    marginBottom: theme.space.xl,
   },
   colorPicker: {
     flexDirection: 'row',
-    gap: 12,
+    gap: theme.space.md,
     flexWrap: 'wrap',
   },
   colorOption: {
-    marginRight: 8,
+    marginRight: theme.space.xs,
   },
   colorCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: theme.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   colorCircleSelected: {
-    borderColor: '#111827',
-    borderWidth: 3,
+    borderColor: theme.color.text,
+    borderWidth: 2,
   },
   saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: theme.space.sm,
   },
   aiDisclaimer: {
-    fontSize: 12,
-    color: '#6b7280',
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: theme.space.md,
     fontStyle: 'italic',
   },
 });
-
