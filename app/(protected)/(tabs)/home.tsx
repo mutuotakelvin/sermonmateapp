@@ -65,6 +65,7 @@ export default function Home() {
   const [sermon, setSermon] = useState<Sermon | null>(null);
   const [editingSermon, setEditingSermon] = useState<SavedSermon | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [savedSermons, setSavedSermons] = useState<SavedSermon[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [sermonToDelete, setSermonToDelete] = useState<SavedSermon | null>(null);
@@ -92,27 +93,25 @@ export default function Home() {
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
-
+    setSermon(null);
+    setEditingSermon(null);
+    setGenerating(true);
     setLoading(true);
+    setModalVisible(true); // open the reading view immediately in its loading state
     try {
       const result = await generateSermon(topic.trim());
       setSermon(result);
-      setEditingSermon(null);
-      setModalVisible(true);
-      showSuccess('Sermon generated', 'Your sermon is ready');
     } catch (error) {
       console.error('Error generating sermon:', error);
+      setModalVisible(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('Error details:', {
-        message: errorMessage,
-        error: error,
-      });
       if (errorMessage.includes('network') || errorMessage.includes('Network')) {
         showError('Network Error', 'Could not reach the sermon service. Please check your internet connection.');
       } else {
         showError('Generation failed', errorMessage.length > 100 ? errorMessage.substring(0, 100) + '...' : errorMessage);
       }
     } finally {
+      setGenerating(false);
       setLoading(false);
     }
   };
@@ -127,6 +126,7 @@ export default function Home() {
     setModalVisible(false);
     setSermon(null);
     setEditingSermon(null);
+    setGenerating(false);
   };
 
   const handleSave = () => {
@@ -344,6 +344,7 @@ export default function Home() {
         topic={topic}
         onClose={handleModalClose}
         onSave={handleSave}
+        loading={generating}
       />
       <ConfirmationModal
         visible={deleteModalVisible}
