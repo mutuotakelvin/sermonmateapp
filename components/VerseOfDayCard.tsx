@@ -32,7 +32,7 @@ export default function VerseOfDayCard() {
         <View style={styles.footerRow}>
           <Text style={styles.reference}>{verse.reference}</Text>
           <View style={styles.ctaRow}>
-            <Text style={styles.cta}>Read today's verse</Text>
+            <Text style={styles.cta}>{"Read today's verse"}</Text>
             <Ionicons name="chevron-forward" size={14} color="#fff" />
           </View>
         </View>
