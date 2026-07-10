@@ -48,6 +48,7 @@ export async function requestVersePermission(): Promise<boolean> {
 // and whenever reminder settings change. Returns true when a schedule is active.
 export async function rescheduleDailyVerse(settings: ReminderSettings): Promise<boolean> {
   try {
+    // NOTE: cancels ALL scheduled notifications app-wide. Fine while daily-verse is the only notification type; switch to per-identifier cancellation if another type is ever added.
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     if (!settings.reminderEnabled) return false;

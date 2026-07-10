@@ -15,7 +15,7 @@ const FALLBACK: BundledVerse = {
   id: 'john-3-16',
   reference: 'John 3:16',
   text: {
-    WEB: 'For God so loved the world, that he gave his only born Son, that whoever believes in him should not perish, but have eternal life.',
+    WEB: 'For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life.',
     KJV: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.',
   },
 };
