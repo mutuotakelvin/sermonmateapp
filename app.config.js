@@ -25,7 +25,8 @@ export default {
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     web: {
@@ -43,6 +44,12 @@ export default {
           dark: {
             backgroundColor: "#000000"
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          color: "#0891B2"
         }
       ]
     ],
