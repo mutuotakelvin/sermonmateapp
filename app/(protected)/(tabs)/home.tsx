@@ -1,4 +1,3 @@
-import ProfileDrawer from "@/components/ProfileDrawer";
 import SermonModal from "@/components/SermonModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import MoodModal from "@/components/MoodModal";
@@ -26,7 +25,6 @@ export default function Home() {
   const router = useRouter();
   const [topic, setTopic] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [drawerVisible, setDrawerVisible] = useState(false);
   const [sermon, setSermon] = useState<Sermon | null>(null);
   const [editingSermon, setEditingSermon] = useState<SavedSermon | null>(null);
   const [loading, setLoading] = useState(false);
@@ -160,12 +158,6 @@ export default function Home() {
               <Text style={dynamicStyles.heroGreeting}>Hi {user?.name?.split(' ')[0] ?? "there"} 👋</Text>
               <Text style={dynamicStyles.heroSubtitle}>Let's prepare something meaningful today</Text>
             </View>
-            <Pressable
-              onPress={() => setDrawerVisible(true)}
-              style={dynamicStyles.menuButton}
-            >
-              <Ionicons name="menu" size={24} color={isDark ? "#fff" : "#111827"} />
-            </Pressable>
           </View>
         </View>
 
@@ -232,7 +224,7 @@ export default function Home() {
             <View style={dynamicStyles.moodSummaryHeader}>
               <Text style={dynamicStyles.moodSummaryTitle}>This Week's Mood</Text>
               <Pressable
-                onPress={() => router.push('/mood-history')}
+                onPress={() => router.push('/(protected)/(tabs)/mood' as never)}
                 style={dynamicStyles.moreButton}
               >
                 <Text style={dynamicStyles.moreButtonText}>More</Text>
@@ -343,10 +335,6 @@ export default function Home() {
           onCancel={handleCancelDelete}
           destructive={true}
           loading={deleting}
-        />
-        <ProfileDrawer
-          visible={drawerVisible}
-          onClose={() => setDrawerVisible(false)}
         />
         <MoodModal
           visible={moodModalVisible}

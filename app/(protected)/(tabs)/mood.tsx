@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+
 import { Calendar } from 'react-native-calendars';
 import { useThemeStore } from '@/lib/stores/theme';
 import { useMoodStore } from '@/lib/stores/mood';
@@ -29,8 +29,7 @@ const MOOD_COLORS: Record<MoodType, string> = {
 };
 
 
-export default function MoodHistory() {
-  const router = useRouter();
+export default function MoodTab() {
   const { theme } = useThemeStore();
   const { moodEntries, loadMoodEntries } = useMoodStore();
   const [selectedEntry, setSelectedEntry] = useState<MoodEntry | null>(null);
@@ -199,9 +198,7 @@ export default function MoodHistory() {
       
       {/* Header */}
       <View style={dynamicStyles.header}>
-        <Pressable onPress={() => router.back()} style={dynamicStyles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={isDark ? "#fff" : "#111827"} />
-        </Pressable>
+        <View style={{ width: 40 }} />
         <Text style={dynamicStyles.headerTitle}>Mood Calendar</Text>
         <View style={{ width: 40 }} />
       </View>
