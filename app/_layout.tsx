@@ -1,5 +1,6 @@
 import 'react-native-url-polyfill/auto';
-import { Lora_500Medium, Lora_600SemiBold, useFonts } from '@expo-google-fonts/lora';
+import { Newsreader_500Medium, Newsreader_500Medium_Italic } from '@expo-google-fonts/newsreader';
+import { WorkSans_400Regular, WorkSans_500Medium, WorkSans_600SemiBold, useFonts } from '@expo-google-fonts/work-sans';
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,7 +15,13 @@ configureNotifications();
 
 export default function RootLayout() {
   const router = useRouter();
-  const [fontsLoaded, fontError] = useFonts({ Lora_500Medium, Lora_600SemiBold });
+  const [fontsLoaded, fontError] = useFonts({
+    Newsreader_500Medium,
+    Newsreader_500Medium_Italic,
+    WorkSans_400Regular,
+    WorkSans_500Medium,
+    WorkSans_600SemiBold,
+  });
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const { initialized, initializeVerseSettings } = useVerseStore();
   const handledResponseId = useRef<string | null>(null);
