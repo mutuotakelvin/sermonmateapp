@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: theme.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.color.accent,
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
   moodDot: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: theme.radius.pill,
   },
   moodSummaryText: {
     textAlign: 'center',
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: theme.radius.pill,
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
