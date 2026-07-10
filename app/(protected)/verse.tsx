@@ -190,7 +190,7 @@ const getStyles = (isDark: boolean) =>
       backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
     },
     segmentItem: {
-      flex: 1, height: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
+      flex: 1, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
     },
     segmentItemActive: { backgroundColor: isDark ? '#374151' : '#fff' },
     segmentText: { fontSize: 14, fontWeight: '600', color: isDark ? '#9ca3af' : '#6b7280' },

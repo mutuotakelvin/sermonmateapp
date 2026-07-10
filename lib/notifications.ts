@@ -46,7 +46,7 @@ export async function requestVersePermission(): Promise<boolean> {
 
 // Cancel-and-reschedule the rolling window. Idempotent — call on app open
 // and whenever reminder settings change. Returns true when a schedule is active.
-export async function rescheduleDailyVerse(settings: ReminderSettings): Promise<boolean> {
+async function runReschedule(settings: ReminderSettings): Promise<boolean> {
   try {
     // NOTE: cancels ALL scheduled notifications app-wide. Fine while daily-verse is the only notification type; switch to per-identifier cancellation if another type is ever added.
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -85,4 +85,15 @@ export async function rescheduleDailyVerse(settings: ReminderSettings): Promise<
     console.error('Error scheduling daily verse notifications:', error);
     return false;
   }
+}
+
+// Serialize concurrent calls: a new reschedule waits for any in-flight one to
+// finish, so two callers (settings screen + app-foreground top-up) can't
+// interleave cancel/schedule and double the notification window.
+let inFlight: Promise<boolean> = Promise.resolve(false);
+
+export function rescheduleDailyVerse(settings: ReminderSettings): Promise<boolean> {
+  const next = inFlight.catch(() => false).then(() => runReschedule(settings));
+  inFlight = next;
+  return next;
 }
