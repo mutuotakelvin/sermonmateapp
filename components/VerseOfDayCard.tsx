@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
     marginTop: theme.space.md,
   },
   reference: { color: theme.color.textMuted },
-  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.xs },
   cta: { color: theme.color.accent },
 });
