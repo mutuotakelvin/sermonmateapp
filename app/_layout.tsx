@@ -3,7 +3,7 @@ import { Lora_500Medium, Lora_600SemiBold, useFonts } from '@expo-google-fonts/l
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { ToastProvider } from '@/components/ToastProvider';
 import { configureNotifications, rescheduleDailyVerse } from '@/lib/notifications';
@@ -17,6 +17,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ Lora_500Medium, Lora_600SemiBold });
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const { initialized, initializeVerseSettings } = useVerseStore();
+  const handledResponseId = useRef<string | null>(null);
 
   // Hide the splash once fonts are ready (or failed — don't block the app on a font).
   useEffect(() => {
@@ -49,9 +50,12 @@ export default function RootLayout() {
 
   // Route notification taps (cold start and background) to the verse screen.
   useEffect(() => {
+    const id = lastNotificationResponse?.notification.request.identifier;
+    if (!id || id === handledResponseId.current) return;
     const screen =
       lastNotificationResponse?.notification.request.content.data?.screen;
     if (screen === 'verse') {
+      handledResponseId.current = id;
       router.push('/(protected)/verse' as never);
     }
   }, [lastNotificationResponse, router]);
