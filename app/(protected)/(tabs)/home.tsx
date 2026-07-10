@@ -101,6 +101,7 @@ export default function Home() {
     try {
       const result = await generateSermon(topic.trim());
       setSermon(result);
+      showSuccess('Sermon generated', 'Your sermon is ready');
     } catch (error) {
       console.error('Error generating sermon:', error);
       setModalVisible(false);
@@ -127,6 +128,7 @@ export default function Home() {
     setSermon(null);
     setEditingSermon(null);
     setGenerating(false);
+    setLoading(false);
   };
 
   const handleSave = () => {
