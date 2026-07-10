@@ -5,12 +5,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,6 +23,10 @@ import { useMoodStore } from '@/lib/stores/mood';
 import type { MoodType, MoodEntry, Sermon } from '@/lib/types';
 import { getReasonsForMood } from '@/lib/moodReasons';
 import SermonModal from './SermonModal';
+import AppText from '@/components/ui/AppText';
+import Chip from '@/components/ui/Chip';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import { theme } from '@/lib/theme';
 
 interface MoodModalProps {
   visible: boolean;
@@ -32,20 +34,20 @@ interface MoodModalProps {
   onComplete?: () => void;
 }
 
-const MOODS: { type: MoodType; label: string; icon: string; colors: [string, string] }[] = [
-  { type: 'Happy', label: 'Happy', icon: 'happy-outline', colors: ['#FCD34D', '#F59E0B'] },
-  { type: 'Grateful', label: 'Grateful', icon: 'heart-outline', colors: ['#86EFAC', '#22C55E'] },
-  { type: 'Hopeful', label: 'Hopeful', icon: 'sunny-outline', colors: ['#60A5FA', '#3B82F6'] },
-  { type: 'Peaceful', label: 'Peaceful', icon: 'leaf-outline', colors: ['#6EE7F9', '#A78BFA'] },
-  { type: 'Anxious', label: 'Anxious', icon: 'alert-circle-outline', colors: ['#FCD34D', '#F59E0B'] },
-  { type: 'Sad', label: 'Sad', icon: 'sad-outline', colors: ['#93C5FD', '#60A5FA'] },
-  { type: 'Overwhelmed', label: 'Overwhelmed', icon: 'warning-outline', colors: ['#F9A8D4', '#EC4899'] },
-  { type: 'Angry', label: 'Angry', icon: 'flame-outline', colors: ['#F87171', '#EF4444'] },
+const MOODS: { type: MoodType; label: string; icon: string }[] = [
+  { type: 'Happy', label: 'Happy', icon: 'happy-outline' },
+  { type: 'Grateful', label: 'Grateful', icon: 'heart-outline' },
+  { type: 'Hopeful', label: 'Hopeful', icon: 'sunny-outline' },
+  { type: 'Peaceful', label: 'Peaceful', icon: 'leaf-outline' },
+  { type: 'Anxious', label: 'Anxious', icon: 'alert-circle-outline' },
+  { type: 'Sad', label: 'Sad', icon: 'sad-outline' },
+  { type: 'Overwhelmed', label: 'Overwhelmed', icon: 'warning-outline' },
+  { type: 'Angry', label: 'Angry', icon: 'flame-outline' },
 ];
 
 // Animated Mood Chip Component
 interface AnimatedMoodChipProps {
-  mood: { type: MoodType; label: string; icon: string; colors: [string, string] };
+  mood: { type: MoodType; label: string; icon: string };
   index: number;
   isSelected: boolean;
   onPress: () => void;
@@ -66,7 +68,6 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
 
   useEffect(() => {
     if (visible) {
-      // Staggered entrance animation
       scale.value = withDelay(
         index * 50,
         withSpring(1, { damping: 12, stiffness: 150 })
@@ -83,7 +84,6 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
 
   useEffect(() => {
     if (isSelected) {
-      // Pulse animation when selected
       pulseScale.value = withSequence(
         withSpring(1.05, { damping: 8 }),
         withSpring(1, { damping: 8 })
@@ -115,28 +115,33 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
-      <Animated.View style={animatedStyle}>
-        <LinearGradient
-          colors={mood.colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.moodGradient,
-            isSelected && styles.moodGradientSelected,
-          ]}
+      <Animated.View
+        style={[
+          animatedStyle,
+          styles.moodTile,
+          isSelected && styles.moodTileSelected,
+        ]}
+      >
+        <Ionicons
+          name={mood.icon as any}
+          size={32}
+          color={isSelected ? theme.color.accent : theme.color.textMuted}
+        />
+        <AppText
+          style={{
+            fontFamily: theme.font.sansMedium,
+            fontSize: 14,
+            color: isSelected ? theme.color.accent : theme.color.text,
+            marginTop: theme.space.xs,
+          }}
         >
-          <Ionicons
-            name={mood.icon as any}
-            size={32}
-            color="#fff"
-          />
-          <Text style={styles.moodLabel}>{mood.label}</Text>
-          {isSelected && (
-            <View style={styles.checkmark}>
-              <Ionicons name="checkmark" size={20} color="#fff" />
-            </View>
-          )}
-        </LinearGradient>
+          {mood.label}
+        </AppText>
+        {isSelected && (
+          <View style={styles.checkmark}>
+            <Ionicons name="checkmark" size={14} color={theme.color.accentText} />
+          </View>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -145,7 +150,7 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
 export default function MoodModal({ visible, onClose, onComplete }: MoodModalProps) {
   const { showSuccess, showError } = useToast();
   const { addMoodEntry } = useMoodStore();
-  
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
@@ -157,7 +162,6 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
 
   useEffect(() => {
     if (visible) {
-      // Reset state when modal opens
       setStep(1);
       setSelectedMood(null);
       setSelectedReasons([]);
@@ -210,7 +214,6 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
 
       setGeneratedSermon(sermon);
 
-      // Create mood entry
       const entry: MoodEntry = {
         id: `mood-${Date.now()}-${Math.random()}`,
         mood: selectedMood,
@@ -218,21 +221,19 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
         customReason: customReason.trim() || undefined,
         date: new Date().toISOString(),
         sermon,
-        aiAdvice: sermon.interpretation, // Use interpretation as AI advice
+        aiAdvice: sermon.interpretation,
       };
 
-      // Save to store
       await addMoodEntry(entry);
       setMoodEntry(entry);
 
-      // Show sermon modal
       setSermonModalVisible(true);
       showSuccess('Mood recorded', 'Your encouragement is ready');
     } catch (error) {
       console.error('Error generating mood sermon:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate encouragement';
       showError('Generation failed', errorMessage);
-      setStep(2); // Go back to reason step
+      setStep(2);
     } finally {
       setLoading(false);
     }
@@ -272,17 +273,20 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
               <View style={styles.headerLeft}>
                 {step > 1 && (
                   <Pressable onPress={handleBack} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#374151" />
+                    <Ionicons name="arrow-back" size={24} color={theme.color.text} />
                   </Pressable>
                 )}
-                <Text style={styles.modalTitle}>
+                <AppText
+                  variant="title"
+                  style={{ fontSize: 20, flex: 1 }}
+                >
                   {step === 1 && 'How do you feel today?'}
-                  {step === 2 && 'What\'s on your mind?'}
+                  {step === 2 && "What's on your mind?"}
                   {step === 3 && 'Generating your encouragement...'}
-                </Text>
+                </AppText>
               </View>
               <Pressable onPress={onClose} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#374151" />
+                <Ionicons name="close" size={24} color={theme.color.text} />
               </Pressable>
             </View>
 
@@ -323,38 +327,31 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
               {/* Step 2: Reason Input */}
               {step === 2 && selectedMood && (
                 <View style={styles.reasonContainer}>
-                  <Text style={styles.reasonTitle}>Why do you feel {selectedMood.toLowerCase()}?</Text>
-                  
+                  <AppText variant="title" style={{ marginBottom: theme.space.sm }}>
+                    Why do you feel {selectedMood.toLowerCase()}?
+                  </AppText>
+
                   {/* Multiple Choice Reasons */}
                   <View style={styles.reasonChips}>
                     {reasons.map((reason) => (
-                      <Pressable
+                      <Chip
                         key={reason}
-                        style={[
-                          styles.reasonChip,
-                          selectedReasons.includes(reason) && styles.reasonChipSelected,
-                        ]}
+                        label={reason}
+                        selected={selectedReasons.includes(reason)}
                         onPress={() => handleReasonToggle(reason)}
-                      >
-                        <Text
-                          style={[
-                            styles.reasonChipText,
-                            selectedReasons.includes(reason) && styles.reasonChipTextSelected,
-                          ]}
-                        >
-                          {reason}
-                        </Text>
-                      </Pressable>
+                      />
                     ))}
                   </View>
 
                   {/* Custom Reason Input */}
                   <View style={styles.customReasonContainer}>
-                    <Text style={styles.customReasonLabel}>Or tell us more (optional)</Text>
+                    <AppText variant="label" style={{ marginBottom: theme.space.sm }}>
+                      Or tell us more (optional)
+                    </AppText>
                     <TextInput
                       style={styles.customReasonInput}
                       placeholder="Share what's on your heart..."
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={theme.color.textMuted}
                       value={customReason}
                       onChangeText={setCustomReason}
                       multiline
@@ -368,10 +365,13 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
               {/* Step 3: Loading */}
               {step === 3 && loading && (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#007AFF" />
-                  <Text style={styles.loadingText}>
+                  <ActivityIndicator size="large" color={theme.color.accent} />
+                  <AppText
+                    variant="body"
+                    style={{ marginTop: theme.space.lg, textAlign: 'center', color: theme.color.textMuted }}
+                  >
                     Creating personalized encouragement for you...
-                  </Text>
+                  </AppText>
                 </View>
               )}
             </ScrollView>
@@ -379,15 +379,11 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
             {/* Footer Buttons */}
             {step < 3 && (
               <View style={styles.footer}>
-                <Pressable
-                  style={[styles.nextButton, !selectedMood && step === 1 && styles.nextButtonDisabled]}
+                <PrimaryButton
+                  label={step === 1 ? 'Next' : 'Generate Encouragement'}
                   onPress={handleNext}
                   disabled={step === 1 && !selectedMood}
-                >
-                  <Text style={styles.nextButtonText}>
-                    {step === 1 ? 'Next' : 'Generate Encouragement'}
-                  </Text>
-                </Pressable>
+                />
               </View>
             )}
           </View>
@@ -415,17 +411,17 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: theme.color.paper,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
     maxHeight: '90%',
     flex: 1,
-    shadowColor: '#000',
+    shadowColor: theme.color.charcoal,
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 10,
   },
@@ -433,142 +429,102 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: theme.space.xl,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.color.border,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: theme.space.md,
   },
   backButton: {
-    padding: 4,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
+    padding: theme.space.xs,
   },
   closeButton: {
-    padding: 4,
+    padding: theme.space.xs,
   },
   progressContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
+    gap: theme.space.sm,
+    paddingVertical: theme.space.lg,
   },
   progressDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.border,
   },
   progressDotActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.color.accent,
     width: 24,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: theme.space.xl,
+    paddingBottom: theme.space.xxl,
   },
   moodGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: theme.space.md,
     justifyContent: 'space-between',
   },
   moodOption: {
     width: '47%',
-    marginBottom: 12,
+    marginBottom: theme.space.md,
   },
-  moodGradient: {
-    padding: 20,
-    borderRadius: 16,
+  moodTile: {
+    padding: theme.space.xl,
+    borderRadius: theme.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 120,
+    minHeight: 110,
     position: 'relative',
+    backgroundColor: theme.color.surface,
+    borderWidth: 1,
+    borderColor: theme.color.border,
   },
-  moodGradientSelected: {
-    borderWidth: 3,
-    borderColor: '#111827',
-  },
-  moodLabel: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 8,
+  moodTileSelected: {
+    borderWidth: 2,
+    borderColor: theme.color.accent,
   },
   checkmark: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    top: theme.space.sm,
+    right: theme.space.sm,
+    width: 22,
+    height: 22,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   reasonContainer: {
-    gap: 20,
-  },
-  reasonTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 8,
+    gap: theme.space.xl,
   },
   reasonChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
-  reasonChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  reasonChipSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  reasonChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  reasonChipTextSelected: {
-    color: '#fff',
+    gap: theme.space.sm,
   },
   customReasonContainer: {
-    marginTop: 8,
-  },
-  customReasonLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    marginTop: theme.space.sm,
   },
   customReasonInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 12,
+    borderColor: theme.color.border,
+    borderRadius: theme.radius.sm,
+    padding: theme.space.md,
     fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#F9FAFB',
+    fontFamily: theme.font.sans,
+    color: theme.color.text,
+    backgroundColor: theme.color.surface,
     minHeight: 100,
   },
   loadingContainer: {
@@ -577,31 +533,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
   footer: {
-    padding: 20,
+    padding: theme.space.xl,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  nextButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextButtonDisabled: {
-    opacity: 0.5,
-  },
-  nextButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    borderTopColor: theme.color.border,
   },
 });
-
