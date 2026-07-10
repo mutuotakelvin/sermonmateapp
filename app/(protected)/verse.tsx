@@ -55,8 +55,12 @@ export default function VerseScreen() {
   };
 
   const handleCopy = async () => {
-    await Clipboard.setStringAsync(formatVerseForShare(verse, translation));
-    showSuccess('Copied', 'Verse copied to clipboard');
+    try {
+      await Clipboard.setStringAsync(formatVerseForShare(verse, translation));
+      showSuccess('Copied', 'Verse copied to clipboard');
+    } catch {
+      showError('Copy failed', 'Could not copy verse to clipboard');
+    }
   };
 
   const timeLabel = new Date(0, 0, 0, reminderHour, reminderMinute)
