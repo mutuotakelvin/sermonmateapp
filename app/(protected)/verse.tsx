@@ -1,26 +1,24 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, Share, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, Switch, View } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '@/components/ToastProvider';
+import AppText from '@/components/ui/AppText';
+import Card from '@/components/ui/Card';
+import Screen from '@/components/ui/Screen';
 import { rescheduleDailyVerse } from '@/lib/notifications';
-import { useThemeStore } from '@/lib/stores/theme';
+import { theme } from '@/lib/theme';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource, formatVerseForShare } from '@/lib/verses';
 import type { Translation } from '@/lib/verseData';
 
-const GRADIENT_LIGHT = ['#22D3EE', '#0891B2'] as const;
-const GRADIENT_DARK = ['#0E7490', '#155E75'] as const;
 const TRANSLATIONS: Translation[] = ['WEB', 'KJV'];
 
 export default function VerseScreen() {
   const router = useRouter();
-  const { theme } = useThemeStore();
   const { showSuccess, showError } = useToast();
   const reducedMotion = useReducedMotion();
   const {
@@ -31,8 +29,6 @@ export default function VerseScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
-  const isDark = theme === 'dark';
-  const styles = getStyles(isDark);
   const today = useMemo(() => new Date(), []);
   const verse = useMemo(() => bundledVerseSource.getVerseForDate(today), [today]);
 
@@ -67,38 +63,37 @@ export default function VerseScreen() {
     .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <Screen>
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={isDark ? '#fff' : '#111827'} />
+          <Ionicons name="chevron-back" size={24} color={theme.color.text} />
         </Pressable>
         <View>
-          <Text style={styles.title}>Verse of the Day</Text>
-          <Text style={styles.date}>{dateLabel}</Text>
+          <AppText variant="display">Verse of the Day</AppText>
+          <AppText variant="caption">{dateLabel}</AppText>
         </View>
       </View>
 
-      {/* Hero verse card */}
+      {/* Hero verse card — solid charcoal */}
       <Animated.View entering={reducedMotion ? undefined : FadeInDown.duration(400)}>
-        <LinearGradient
-          colors={isDark ? GRADIENT_DARK : GRADIENT_LIGHT}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroCard}
-        >
-          <Text style={styles.verseText}>{verse.text[translation]}</Text>
-          <Text style={styles.verseReference}>{verse.reference}</Text>
+        <Card tone="charcoal" style={styles.heroCard}>
+          <AppText variant="verse" style={styles.verseText}>
+            {verse.text[translation]}
+          </AppText>
+          <AppText variant="label" style={styles.verseReference}>
+            {verse.reference}
+          </AppText>
 
           <View style={styles.actionsRow}>
             <Pressable onPress={handleShare} style={styles.actionButton} hitSlop={4}>
-              <Ionicons name="share-outline" size={22} color="#fff" />
+              <Ionicons name="share-outline" size={22} color={theme.color.paper} />
             </Pressable>
             <Pressable onPress={handleCopy} style={styles.actionButton} hitSlop={4}>
-              <Ionicons name="copy-outline" size={22} color="#fff" />
+              <Ionicons name="copy-outline" size={22} color={theme.color.paper} />
             </Pressable>
           </View>
-        </LinearGradient>
+        </Card>
       </Animated.View>
 
       {/* Translation toggle */}
@@ -109,40 +104,43 @@ export default function VerseScreen() {
             onPress={() => setTranslation(t)}
             style={[styles.segmentItem, translation === t && styles.segmentItemActive]}
           >
-            <Text style={[styles.segmentText, translation === t && styles.segmentTextActive]}>
+            <AppText
+              variant="label"
+              style={[styles.segmentText, translation === t && styles.segmentTextActive]}
+            >
               {t}
-            </Text>
+            </AppText>
           </Pressable>
         ))}
       </View>
 
       {/* Reminder settings */}
-      <View style={styles.settingsCard}>
+      <Card style={styles.settingsCard}>
         <View style={styles.settingRow}>
           <View style={styles.settingLabelWrap}>
-            <Text style={styles.settingLabel}>Daily reminder</Text>
-            <Text style={styles.settingHint}>Get a memory verse every day</Text>
+            <AppText variant="body" style={styles.settingLabel}>Daily reminder</AppText>
+            <AppText variant="caption">Get a memory verse every day</AppText>
           </View>
           <Switch
             value={reminderEnabled}
             onValueChange={setReminderEnabled}
-            trackColor={{ true: '#0891B2' }}
+            trackColor={{ true: theme.color.accent }}
           />
         </View>
 
         {reminderEnabled && (
           <Pressable style={styles.settingRow} onPress={() => setShowTimePicker(true)}>
-            <Text style={styles.settingLabel}>Reminder time</Text>
-            <Text style={styles.timeValue}>{timeLabel}</Text>
+            <AppText variant="body" style={styles.settingLabel}>Reminder time</AppText>
+            <AppText variant="body" style={styles.timeValue}>{timeLabel}</AppText>
           </Pressable>
         )}
 
         {permissionDenied && (
-          <Text style={styles.permissionNote}>
+          <AppText variant="caption" style={styles.permissionNote}>
             Turn on notifications for SermonMate in your device Settings to get your daily verse.
-          </Text>
+          </AppText>
         )}
-      </View>
+      </Card>
 
       {showTimePicker && (
         <DateTimePicker
@@ -156,56 +154,54 @@ export default function VerseScreen() {
           }}
         />
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    container: { flex: 1, backgroundColor: isDark ? '#111827' : '#fff', paddingHorizontal: 16 },
-    header: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
-    backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    title: { fontSize: 22, fontWeight: '800', color: isDark ? '#fff' : '#111827' },
-    date: { fontSize: 13, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 2 },
-    heroCard: {
-      borderRadius: 16, padding: 28, marginTop: 8,
-      shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 }, elevation: 4,
-    },
-    verseText: {
-      fontFamily: 'Lora_500Medium', fontSize: 22, lineHeight: 34,
-      color: '#fff', textAlign: 'center',
-    },
-    verseReference: {
-      marginTop: 18, textAlign: 'center', color: 'rgba(255,255,255,0.9)',
-      fontSize: 13, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase',
-    },
-    actionsRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 20 },
-    actionButton: {
-      width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: 'rgba(255,255,255,0.18)',
-    },
-    segment: {
-      flexDirection: 'row', marginTop: 20, borderRadius: 12, padding: 4,
-      backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
-    },
-    segmentItem: {
-      flex: 1, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
-    },
-    segmentItemActive: { backgroundColor: isDark ? '#374151' : '#fff' },
-    segmentText: { fontSize: 14, fontWeight: '600', color: isDark ? '#9ca3af' : '#6b7280' },
-    segmentTextActive: { color: isDark ? '#fff' : '#111827' },
-    settingsCard: {
-      marginTop: 20, borderRadius: 16, padding: 16, gap: 4,
-      backgroundColor: isDark ? '#1f2937' : '#F9FAFB',
-    },
-    settingRow: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      minHeight: 44,
-    },
-    settingLabelWrap: { flex: 1, paddingRight: 12 },
-    settingLabel: { fontSize: 16, fontWeight: '600', color: isDark ? '#fff' : '#111827' },
-    settingHint: { fontSize: 13, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 2 },
-    timeValue: { fontSize: 16, fontWeight: '600', color: '#0891B2' },
-    permissionNote: { marginTop: 8, fontSize: 13, lineHeight: 18, color: '#F59E0B' },
-  });
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, paddingVertical: theme.space.md },
+  backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  heroCard: {
+    marginTop: theme.space.sm,
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 }, elevation: 4,
+  },
+  verseText: {
+    color: theme.color.paper,
+    textAlign: 'center',
+    fontSize: 22,
+    lineHeight: 34,
+  },
+  verseReference: {
+    marginTop: theme.space.lg,
+    textAlign: 'center',
+    color: `${theme.color.paper}e6`,
+  },
+  actionsRow: { flexDirection: 'row', justifyContent: 'center', gap: theme.space.md, marginTop: theme.space.xl },
+  actionButton: {
+    width: 44, height: 44, borderRadius: theme.radius.pill,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(242,237,228,0.18)',
+  },
+  segment: {
+    flexDirection: 'row', marginTop: theme.space.xl,
+    borderRadius: theme.radius.sm, padding: theme.space.xs,
+    backgroundColor: theme.color.surfaceAlt,
+  },
+  segmentItem: {
+    flex: 1, height: 44, borderRadius: theme.radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  segmentItemActive: { backgroundColor: theme.color.charcoal },
+  segmentText: { color: theme.color.textMuted },
+  segmentTextActive: { color: theme.color.paper },
+  settingsCard: { marginTop: theme.space.xl, gap: theme.space.xs },
+  settingRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    minHeight: 44,
+  },
+  settingLabelWrap: { flex: 1, paddingRight: theme.space.md },
+  settingLabel: { fontFamily: theme.font.sansSemibold, color: theme.color.text },
+  timeValue: { color: theme.color.accent, fontFamily: theme.font.sansSemibold },
+  permissionNote: { marginTop: theme.space.sm, color: theme.color.rust },
+});
