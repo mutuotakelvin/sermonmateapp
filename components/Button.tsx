@@ -1,35 +1,36 @@
-import { colors } from '@/utils/colors';
 import React, { useState } from 'react';
 import { Pressable, PressableProps, StyleSheet, Text } from 'react-native';
+import { theme } from '@/lib/theme';
 
 export default function Button({ children, ...props }: PressableProps) {
-    const [ isPressed, setIsPressed ] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   return (
-    <Pressable 
-        style={[ styles.button, isPressed && styles.buttonPressed]}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        {...props}
+    <Pressable
+      style={[styles.button, isPressed && styles.buttonPressed]}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      {...props}
     >
-      { typeof(children) === 'string' ? <Text style={styles.text}>{children}</Text> : (children) }
+      {typeof children === 'string' ? <Text style={styles.text}>{children}</Text> : children}
     </Pressable>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: theme.color.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingVertical: theme.space.xs,
+    borderRadius: theme.radius.pill,
   },
   buttonPressed: {
-    backgroundColor: colors.blue,
+    backgroundColor: theme.color.rust,
     opacity: 0.8,
   },
   text: {
-    color: "white"
-  }
+    color: theme.color.accentText,
+    fontFamily: theme.font.sansSemibold,
+  },
 });

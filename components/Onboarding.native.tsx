@@ -1,13 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,13 +17,15 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { theme } from '@/lib/theme';
+import AppText from '@/components/ui/AppText';
+import PrimaryButton from '@/components/ui/PrimaryButton';
 
 interface OnboardingScreenProps {
   title: string;
   description: string;
   icon: string;
   iconColor: string;
-  gradientColors: string[];
   index: number;
   currentPage: number;
 }
@@ -92,7 +92,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   description,
   icon,
   iconColor,
-  gradientColors,
   index,
   currentPage,
 }) => {
@@ -135,10 +134,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           currentPage={currentPage}
         />
         <Animated.View style={[styles.textContainer, titleStyle]}>
-          <Text style={styles.title}>{title}</Text>
+          <AppText variant="display" style={styles.title}>{title}</AppText>
         </Animated.View>
         <Animated.View style={[styles.textContainer, descStyle]}>
-          <Text style={styles.description}>{description}</Text>
+          <AppText variant="body" style={styles.description}>{description}</AppText>
         </Animated.View>
       </View>
     </View>
@@ -154,22 +153,19 @@ export default function Onboarding() {
       title: 'Generate Sermons',
       description: 'Create insightful, AI-generated sermons for your personal study and reflection with just a few taps.',
       icon: 'sparkles',
-      iconColor: '#FFCC00',
-      gradientColors: ['#FFF9E6', '#FFF5D6', '#FFF0C2'],
+      iconColor: theme.color.accent,
     },
     {
       title: 'Share Sermons',
       description: 'Easily share an inspiring message with friends, family, or your study group.',
       icon: 'share-social',
-      iconColor: '#007AFF',
-      gradientColors: ['#E6F3FF', '#D6EBFF', '#C7E3FF'],
+      iconColor: theme.color.dustyBlue,
     },
     {
       title: 'Save Sermons',
       description: 'Organize and save all your favorite sermons in one place. Access them anytime, anywhere.',
       icon: 'bookmark',
-      iconColor: '#34C759',
-      gradientColors: ['#E6F9EC', '#D6F5E0', '#C7F1D4'],
+      iconColor: theme.color.sage,
     },
   ];
 
@@ -202,16 +198,8 @@ export default function Onboarding() {
     setTimeout(callback, 100);
   };
 
-  const currentGradient = (screens[currentPage]?.gradientColors || screens[0].gradientColors) as [string, string, ...string[]];
-
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={currentGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
@@ -225,7 +213,6 @@ export default function Onboarding() {
             description={screen.description}
             icon={screen.icon}
             iconColor={screen.iconColor}
-            gradientColors={screen.gradientColors}
             index={index}
             currentPage={currentPage}
           />
@@ -253,7 +240,7 @@ export default function Onboarding() {
               style={styles.skipButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.skipText}>SKIP</Text>
+              <AppText style={styles.skipText}>SKIP</AppText>
             </TouchableOpacity>
           )}
           <Animated.View style={[
@@ -261,22 +248,11 @@ export default function Onboarding() {
             currentPage === screens.length - 1 && { flex: 0, alignItems: 'center' },
             animatedButtonStyle
           ]}>
-            <TouchableOpacity
+            <PrimaryButton
+              label={currentPage === screens.length - 1 ? 'START' : 'NEXT'}
               onPress={() => handleButtonPress(handleNext)}
               style={styles.nextButton}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#1f2937', '#374151']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}
-              >
-                <Text style={styles.nextText}>
-                  {currentPage === screens.length - 1 ? 'START' : 'NEXT'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            />
           </Animated.View>
         </View>
       </View>
@@ -319,6 +295,7 @@ const PaginationDot: React.FC<{ index: number; currentPage: number }> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.color.paper,
   },
   pagerView: {
     flex: 1,
@@ -327,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: theme.space.xxl,
   },
   content: {
     flex: 1,
@@ -357,28 +334,24 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     width: '100%',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingHorizontal: theme.space.xl,
+    marginBottom: theme.space.lg,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
-    color: '#1f2937',
+    marginBottom: theme.space.lg,
     letterSpacing: -0.5,
   },
   description: {
-    fontSize: 17,
     textAlign: 'center',
     lineHeight: 26,
-    color: '#4b5563',
-    paddingHorizontal: 8,
+    paddingHorizontal: theme.space.sm,
   },
   footer: {
-    paddingHorizontal: 32,
-    paddingBottom: Platform.OS === 'ios' ? 48 : 32,
-    paddingTop: 20,
+    paddingHorizontal: theme.space.xxl,
+    paddingBottom: Platform.OS === 'ios' ? 48 : theme.space.xxl,
+    paddingTop: theme.space.xl,
     backgroundColor: 'transparent',
     position: 'relative',
     zIndex: 1,
@@ -388,12 +361,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 40,
-    gap: 8,
+    gap: theme.space.sm,
   },
   dot: {
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1f2937',
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.accent,
   },
   buttons: {
     flexDirection: 'row',
@@ -402,45 +375,19 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.space.xl,
   },
   skipText: {
     fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '600',
+    color: theme.color.textMuted,
     letterSpacing: 0.5,
+    fontFamily: theme.font.sansSemibold,
   },
   buttonWrapper: {
     flex: 1,
     alignItems: 'flex-end',
   },
   nextButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
     minWidth: 120,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  buttonGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '700',
-    letterSpacing: 1,
   },
 });
-

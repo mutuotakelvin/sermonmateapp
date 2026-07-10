@@ -1,8 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '@/lib/stores/theme';
-import { colors } from '@/utils/colors';
+import { theme } from '@/lib/theme';
+import AppText from '@/components/ui/AppText';
 
 interface ConfirmationModalProps {
   visible: boolean;
@@ -27,10 +27,6 @@ export default function ConfirmationModal({
   destructive = true,
   loading = false,
 }: ConfirmationModalProps) {
-  const { theme } = useThemeStore();
-  const isDark = theme === 'dark';
-  const dynamicStyles = getStyles(isDark);
-
   return (
     <Modal
       visible={visible}
@@ -40,42 +36,41 @@ export default function ConfirmationModal({
     >
       <View style={styles.modalOverlay}>
         <Pressable style={styles.backdrop} onPress={onCancel} />
-        <View style={[styles.modalContent, dynamicStyles.modalContent]}>
-          <View style={[styles.modalHeader, dynamicStyles.modalHeader]}>
-            <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>{title}</Text>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <AppText variant="title" style={styles.modalTitle}>{title}</AppText>
             <Pressable onPress={onCancel} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={isDark ? "#fff" : "#374151"} />
+              <Ionicons name="close" size={24} color={theme.color.text} />
             </Pressable>
           </View>
 
           <View style={styles.content}>
-            <Text style={[styles.message, dynamicStyles.message]}>{message}</Text>
+            <AppText variant="body" style={styles.message}>{message}</AppText>
 
             <View style={styles.buttonContainer}>
               <Pressable
-                style={[styles.button, styles.cancelButton, dynamicStyles.cancelButton]}
+                style={[styles.button, styles.cancelButton]}
                 onPress={onCancel}
                 disabled={loading}
               >
-                <Text style={[styles.buttonText, dynamicStyles.cancelButtonText]}>
+                <AppText variant="body" style={styles.cancelButtonText}>
                   {cancelText}
-                </Text>
+                </AppText>
               </Pressable>
 
               <Pressable
                 style={[
                   styles.button,
                   destructive ? styles.deleteButton : styles.confirmButton,
-                  dynamicStyles.deleteButton,
                   loading && styles.buttonDisabled,
                 ]}
                 onPress={onConfirm}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={theme.color.accentText} />
                 ) : (
-                  <Text style={styles.deleteButtonText}>{confirmText}</Text>
+                  <AppText style={styles.actionButtonText}>{confirmText}</AppText>
                 )}
               </Pressable>
             </View>
@@ -97,11 +92,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
+    backgroundColor: theme.color.surface,
+    borderRadius: theme.radius.lg,
     width: '85%',
     maxWidth: 400,
-    shadowColor: '#000',
+    shadowColor: theme.color.charcoal,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -111,86 +106,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: theme.space.xl,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.color.border,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
     flex: 1,
   },
   closeButton: {
-    padding: 4,
-    marginLeft: 12,
+    padding: theme.space.xs,
+    marginLeft: theme.space.md,
   },
   content: {
-    padding: 20,
+    padding: theme.space.xl,
   },
   message: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: theme.space.xl,
+    color: theme.color.textMuted,
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: theme.space.md,
   },
   button: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: theme.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: theme.color.surfaceAlt,
   },
   confirmButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.color.accent,
   },
   deleteButton: {
-    backgroundColor: colors.error,
+    backgroundColor: theme.color.danger,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+  cancelButtonText: {
+    color: theme.color.text,
+    fontFamily: theme.font.sansSemibold,
   },
-  deleteButtonText: {
+  actionButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontFamily: theme.font.sansSemibold,
+    color: theme.color.accentText,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
 });
-
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    modalContent: {
-      backgroundColor: isDark ? '#1f2937' : '#fff',
-    },
-    modalHeader: {
-      borderBottomColor: isDark ? '#374151' : '#E5E7EB',
-    },
-    modalTitle: {
-      color: isDark ? '#fff' : '#111827',
-    },
-    message: {
-      color: isDark ? '#d1d5db' : '#374151',
-    },
-    cancelButton: {
-      backgroundColor: isDark ? '#374151' : '#F3F4F6',
-    },
-    cancelButtonText: {
-      color: isDark ? '#fff' : '#374151',
-    },
-    deleteButton: {
-      backgroundColor: colors.error,
-    },
-  });
-

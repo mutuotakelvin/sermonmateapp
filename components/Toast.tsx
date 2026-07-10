@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { theme } from '@/lib/theme';
+import AppText from '@/components/ui/AppText';
 
 export type ToastType = 'success' | 'warning' | 'info' | 'error';
 
@@ -65,37 +67,32 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000
     }
   }, [duration, dismiss]);
 
-
-  const getToastStyles = () => {
+  const getToastConfig = () => {
     switch (type) {
       case 'success':
         return {
           icon: 'checkmark-circle' as const,
-          iconColor: '#28A745',
-          backgroundColor: '#FFFFFF',
+          iconColor: theme.color.sage,
         };
       case 'warning':
         return {
           icon: 'warning' as const,
-          iconColor: '#FFC107',
-          backgroundColor: '#FFFFFF',
+          iconColor: theme.color.sand,
         };
       case 'info':
         return {
           icon: 'information-circle' as const,
-          iconColor: '#17A2B8',
-          backgroundColor: '#FFFFFF',
+          iconColor: theme.color.dustyBlue,
         };
       case 'error':
         return {
           icon: 'close-circle' as const,
-          iconColor: '#DC3545',
-          backgroundColor: '#FFFFFF',
+          iconColor: theme.color.danger,
         };
     }
   };
 
-  const styles = getToastStyles();
+  const toastConfig = getToastConfig();
 
   return (
     <Animated.View
@@ -109,18 +106,18 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000
       ]}
       pointerEvents="box-none"
     >
-      <View style={[toastStyles.toast, { backgroundColor: styles.backgroundColor }]}>
+      <View style={toastStyles.toast}>
         <View style={toastStyles.content}>
-          <View style={[toastStyles.iconContainer, { backgroundColor: styles.iconColor }]}>
-            <Ionicons name={styles.icon} size={20} color="#FFFFFF" />
+          <View style={[toastStyles.iconContainer, { backgroundColor: toastConfig.iconColor }]}>
+            <Ionicons name={toastConfig.icon} size={20} color={theme.color.accentText} />
           </View>
           <View style={toastStyles.textContainer}>
-            <Text style={toastStyles.title}>{title}</Text>
-            {message && <Text style={toastStyles.message}>{message}</Text>}
+            <AppText variant="title" style={toastStyles.title}>{title}</AppText>
+            {message && <AppText variant="caption" style={toastStyles.message}>{message}</AppText>}
           </View>
         </View>
         <Pressable onPress={dismiss} style={toastStyles.closeButton} hitSlop={8}>
-          <Ionicons name="close" size={18} color="#6C757D" />
+          <Ionicons name="close" size={18} color={theme.color.textMuted} />
         </Pressable>
       </View>
     </Animated.View>
@@ -130,17 +127,18 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000
 const toastStyles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: theme.space.lg,
+    right: theme.space.lg,
     zIndex: 9999,
   },
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
+    padding: theme.space.lg,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.color.surface,
+    shadowColor: theme.color.charcoal,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -150,34 +148,28 @@ const toastStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 12,
+    marginRight: theme.space.md,
   },
   iconContainer: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: theme.radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: theme.space.md,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 2,
   },
   message: {
-    fontSize: 13,
-    color: '#6B7280',
     lineHeight: 18,
   },
   closeButton: {
-    padding: 4,
+    padding: theme.space.xs,
   },
 });
 
 export default Toast;
-
