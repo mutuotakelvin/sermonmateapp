@@ -3,7 +3,7 @@ import SermonModal from "@/components/SermonModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import MoodModal from "@/components/MoodModal";
 import { useToast } from "@/components/ToastProvider";
-import { generateSermon } from "@/lib/gemini";
+import { generateSermon } from "@/lib/sermonAi";
 import { getSermons, deleteSermon } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useThemeStore } from "@/lib/stores/theme";
@@ -87,12 +87,8 @@ export default function Home() {
       });
       
       // Show more specific error messages
-      if (errorMessage.includes('Missing EXPO_PUBLIC_GEMINI_API_KEY')) {
-        showError('Configuration Error', 'Gemini API key is missing. Please check your environment variables.');
-      } else if (errorMessage.includes('Gemini API error')) {
-        showError('API Error', errorMessage);
-      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
-        showError('Network Error', 'Could not connect to Gemini API. Please check your internet connection.');
+      if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+        showError('Network Error', 'Could not reach the sermon service. Please check your internet connection.');
       } else {
         showError('Generation failed', errorMessage.length > 100 ? errorMessage.substring(0, 100) + '...' : errorMessage);
       }

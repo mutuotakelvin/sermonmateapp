@@ -20,7 +20,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { useToast } from '@/components/ToastProvider';
-import { generateMoodSermon } from '@/lib/gemini';
+import { generateMoodSermon } from '@/lib/sermonAi';
 import { useMoodStore } from '@/lib/stores/mood';
 import type { MoodType, MoodEntry, Sermon } from '@/lib/types';
 import { getReasonsForMood } from '@/lib/moodReasons';

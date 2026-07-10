@@ -54,8 +54,6 @@ export default {
       eas: {
         projectId: "9d737b63-33ca-4168-bfae-f89e8d3415df"
       },
-      // Make Gemini API key available
-      geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
       // Firebase web app config (public identifiers, safe to commit)
       firebase: {
         apiKey: "AIzaSyBZKjgaSi_qd8inMx5R5VvYIJpGlWz32lA",

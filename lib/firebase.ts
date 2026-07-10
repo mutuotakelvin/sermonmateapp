@@ -5,6 +5,7 @@ import { initializeApp } from 'firebase/app';
 // the web type declarations don't expose it, but Metro resolves it correctly at runtime.
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = Constants.expoConfig?.extra?.firebase;
 
@@ -20,3 +21,7 @@ export const auth = initializeAuth(app, {
 });
 
 export const db = getFirestore(app);
+
+// Callable Cloud Functions (sermon generation runs server-side so the
+// Anthropic API key never ships in the app).
+export const functions = getFunctions(app);
