@@ -1,4 +1,5 @@
 import type { TextStyle } from 'react-native';
+import type { MoodType } from './types';
 
 export const theme = {
   color: {
@@ -20,6 +21,18 @@ export const theme = {
     charcoal: '#2E2A25',
     danger: '#B23B2E',
   },
+  // Bold per-mood accent colors for the mood-confirm screen (deliberately
+  // more saturated than the muted card palette). `on` meets 4.5:1 contrast.
+  moodColor: {
+    Happy:       { bg: '#E0A22E', on: '#2A2420' },
+    Grateful:    { bg: '#5E9B6B', on: '#FBF8F2' },
+    Hopeful:     { bg: '#5B8DC9', on: '#FBF8F2' },
+    Peaceful:    { bg: '#3FA39C', on: '#FBF8F2' },
+    Anxious:     { bg: '#C4913F', on: '#2A2420' },
+    Sad:         { bg: '#6E86A8', on: '#FBF8F2' },
+    Overwhelmed: { bg: '#A96A93', on: '#FBF8F2' },
+    Angry:       { bg: '#C0553A', on: '#FBF8F2' },
+  } as Record<MoodType, { bg: string; on: string }>,
   font: {
     serif: 'Newsreader_500Medium',
     serifItalic: 'Newsreader_500Medium_Italic',
