@@ -12,10 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
-  withSequence,
-  withDelay,
 } from 'react-native-reanimated';
 import { useToast } from '@/components/ToastProvider';
 import { generateMoodSermon } from '@/lib/sermonAi';
@@ -24,7 +21,6 @@ import type { MoodType, MoodEntry, Sermon } from '@/lib/types';
 import { getReasonsForMood } from '@/lib/moodReasons';
 import SermonModal from './SermonModal';
 import AppText from '@/components/ui/AppText';
-import Chip from '@/components/ui/Chip';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { theme } from '@/lib/theme';
 
@@ -61,59 +57,24 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
   onPress,
   visible,
 }) => {
-  const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
-  const pressScale = useSharedValue(1);
-  const pulseScale = useSharedValue(1);
 
   useEffect(() => {
     if (visible) {
-      scale.value = withDelay(
-        index * 50,
-        withSpring(1, { damping: 12, stiffness: 150 })
-      );
-      opacity.value = withDelay(
-        index * 50,
-        withTiming(1, { duration: 300 })
-      );
+      opacity.value = withTiming(1, { duration: 150 });
     } else {
-      scale.value = withTiming(0, { duration: 200 });
-      opacity.value = withTiming(0, { duration: 200 });
+      opacity.value = withTiming(0, { duration: 150 });
     }
   }, [visible, index]);
 
-  useEffect(() => {
-    if (isSelected) {
-      pulseScale.value = withSequence(
-        withSpring(1.05, { damping: 8 }),
-        withSpring(1, { damping: 8 })
-      );
-    } else {
-      pulseScale.value = withSpring(1, { damping: 8 });
-    }
-  }, [isSelected]);
-
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value * pressScale.value * pulseScale.value },
-    ],
     opacity: opacity.value,
   }));
-
-  const handlePressIn = () => {
-    pressScale.value = withSpring(0.95, { damping: 15 });
-  };
-
-  const handlePressOut = () => {
-    pressScale.value = withSpring(1, { damping: 15 });
-  };
 
   return (
     <Pressable
       style={styles.moodOption}
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
     >
       <Animated.View
         style={[
@@ -257,6 +218,13 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
 
   const reasons = selectedMood ? getReasonsForMood(selectedMood) : [];
 
+  // Mood color tokens for step 2
+  const moodColors = selectedMood ? theme.moodColor[selectedMood] : null;
+  const moodBg = moodColors?.bg ?? theme.color.paper;
+  const moodOn = moodColors?.on ?? theme.color.text;
+  const moodIcon = selectedMood ? MOODS.find((m) => m.type === selectedMood)?.icon ?? 'happy-outline' : 'happy-outline';
+  const dateLabel = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
   return (
     <>
       <Modal
@@ -267,126 +235,199 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
       >
         <View style={styles.modalOverlay}>
           <Pressable style={styles.backdrop} onPress={onClose} />
-          <View style={styles.modalContent}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <View style={styles.headerLeft}>
-                {step > 1 && (
+
+          {/* Step 2: Bold full-color confirm screen */}
+          {step === 2 && selectedMood ? (
+            <View style={[styles.modalContent, { backgroundColor: moodBg }]}>
+              {/* Header row: back + close */}
+              <View style={[styles.modalHeader, { borderBottomColor: `${moodOn}30` }]}>
+                <View style={styles.headerLeft}>
                   <Pressable onPress={handleBack} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={theme.color.text} />
+                    <Ionicons name="arrow-back" size={24} color={moodOn} />
                   </Pressable>
-                )}
-                <AppText
-                  variant="title"
-                  style={{ fontSize: 20, flex: 1 }}
-                >
-                  {step === 1 && 'How do you feel today?'}
-                  {step === 2 && "What's on your mind?"}
-                  {step === 3 && 'Generating your encouragement...'}
-                </AppText>
-              </View>
-              <Pressable onPress={onClose} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color={theme.color.text} />
-              </Pressable>
-            </View>
-
-            {/* Progress Indicator */}
-            <View style={styles.progressContainer}>
-              {[1, 2, 3].map((s) => (
-                <View
-                  key={s}
-                  style={[
-                    styles.progressDot,
-                    s <= step && styles.progressDotActive,
-                  ]}
-                />
-              ))}
-            </View>
-
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Step 1: Mood Selection */}
-              {step === 1 && (
-                <View style={styles.moodGrid}>
-                  {MOODS.map((mood, index) => (
-                    <AnimatedMoodChip
-                      key={mood.type}
-                      mood={mood}
-                      index={index}
-                      isSelected={selectedMood === mood.type}
-                      onPress={() => handleMoodSelect(mood.type)}
-                      visible={visible && step === 1}
-                    />
-                  ))}
                 </View>
-              )}
+                <Pressable onPress={onClose} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color={moodOn} />
+                </Pressable>
+              </View>
 
-              {/* Step 2: Reason Input */}
-              {step === 2 && selectedMood && (
-                <View style={styles.reasonContainer}>
-                  <AppText variant="title" style={{ marginBottom: theme.space.sm }}>
-                    Why do you feel {selectedMood.toLowerCase()}?
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Big mood face + name + date */}
+                <View style={styles.confirmHero}>
+                  <Ionicons name={moodIcon as any} size={64} color={moodOn} />
+                  <AppText
+                    variant="display"
+                    style={{ color: moodOn, fontSize: 34, marginTop: theme.space.md, textTransform: 'capitalize' }}
+                  >
+                    {selectedMood}
                   </AppText>
+                  <AppText
+                    style={{
+                      fontFamily: theme.font.sans,
+                      fontSize: 14,
+                      color: moodOn,
+                      opacity: 0.7,
+                      marginTop: theme.space.xs,
+                    }}
+                  >
+                    {dateLabel}
+                  </AppText>
+                </View>
 
-                  {/* Multiple Choice Reasons */}
-                  <View style={styles.reasonChips}>
-                    {reasons.map((reason) => (
-                      <Chip
+                {/* Reason chips */}
+                <View style={styles.reasonChips}>
+                  {reasons.map((reason) => {
+                    const sel = selectedReasons.includes(reason);
+                    return (
+                      <Pressable
                         key={reason}
-                        label={reason}
-                        selected={selectedReasons.includes(reason)}
                         onPress={() => handleReasonToggle(reason)}
+                        style={[
+                          styles.onColorChip,
+                          sel
+                            ? { backgroundColor: moodOn, borderColor: moodOn }
+                            : { backgroundColor: 'transparent', borderColor: `${moodOn}80` },
+                        ]}
+                      >
+                        <AppText
+                          style={{
+                            fontFamily: theme.font.sansMedium,
+                            fontSize: 14,
+                            color: sel ? moodBg : moodOn,
+                          }}
+                        >
+                          {reason}
+                        </AppText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {/* Add-a-reason TextInput */}
+                <View style={styles.customReasonContainer}>
+                  <TextInput
+                    style={[
+                      styles.customReasonInput,
+                      {
+                        borderColor: `${moodOn}60`,
+                        color: moodOn,
+                      },
+                    ]}
+                    placeholder="Or share what's on your heart..."
+                    placeholderTextColor={`${moodOn}60`}
+                    value={customReason}
+                    onChangeText={setCustomReason}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* Send button: on-color pill — bg = on, label = bg */}
+                <Pressable
+                  onPress={handleGenerateSermon}
+                  style={[styles.sendButton, { backgroundColor: moodOn }]}
+                >
+                  <AppText
+                    style={{
+                      fontFamily: theme.font.sansSemibold,
+                      fontSize: 16,
+                      color: moodBg,
+                    }}
+                  >
+                    Generate Encouragement
+                  </AppText>
+                </Pressable>
+              </ScrollView>
+            </View>
+          ) : (
+            /* Steps 1 and 3: standard paper-background sheet */
+            <View style={styles.modalContent}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <View style={styles.headerLeft}>
+                  {step > 1 && (
+                    <Pressable onPress={handleBack} style={styles.backButton}>
+                      <Ionicons name="arrow-back" size={24} color={theme.color.text} />
+                    </Pressable>
+                  )}
+                  <AppText
+                    variant="title"
+                    style={{ fontSize: 20, flex: 1 }}
+                  >
+                    {step === 1 && 'How do you feel today?'}
+                    {step === 3 && 'Generating your encouragement...'}
+                  </AppText>
+                </View>
+                <Pressable onPress={onClose} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color={theme.color.text} />
+                </Pressable>
+              </View>
+
+              {/* Progress Indicator */}
+              <View style={styles.progressContainer}>
+                {[1, 2, 3].map((s) => (
+                  <View
+                    key={s}
+                    style={[
+                      styles.progressDot,
+                      s <= step && styles.progressDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Step 1: Mood Selection */}
+                {step === 1 && (
+                  <View style={styles.moodGrid}>
+                    {MOODS.map((mood, index) => (
+                      <AnimatedMoodChip
+                        key={mood.type}
+                        mood={mood}
+                        index={index}
+                        isSelected={selectedMood === mood.type}
+                        onPress={() => handleMoodSelect(mood.type)}
+                        visible={visible && step === 1}
                       />
                     ))}
                   </View>
+                )}
 
-                  {/* Custom Reason Input */}
-                  <View style={styles.customReasonContainer}>
-                    <AppText variant="label" style={{ marginBottom: theme.space.sm }}>
-                      Or tell us more (optional)
+                {/* Step 3: Loading */}
+                {step === 3 && loading && (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.color.accent} />
+                    <AppText
+                      variant="body"
+                      style={{ marginTop: theme.space.lg, textAlign: 'center', color: theme.color.textMuted }}
+                    >
+                      Creating personalized encouragement for you...
                     </AppText>
-                    <TextInput
-                      style={styles.customReasonInput}
-                      placeholder="Share what's on your heart..."
-                      placeholderTextColor={theme.color.textMuted}
-                      value={customReason}
-                      onChangeText={setCustomReason}
-                      multiline
-                      numberOfLines={4}
-                      textAlignVertical="top"
-                    />
                   </View>
+                )}
+              </ScrollView>
+
+              {/* Footer Buttons (step 1 only) */}
+              {step === 1 && (
+                <View style={styles.footer}>
+                  <PrimaryButton
+                    label="Next"
+                    onPress={handleNext}
+                    disabled={!selectedMood}
+                  />
                 </View>
               )}
-
-              {/* Step 3: Loading */}
-              {step === 3 && loading && (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={theme.color.accent} />
-                  <AppText
-                    variant="body"
-                    style={{ marginTop: theme.space.lg, textAlign: 'center', color: theme.color.textMuted }}
-                  >
-                    Creating personalized encouragement for you...
-                  </AppText>
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Footer Buttons */}
-            {step < 3 && (
-              <View style={styles.footer}>
-                <PrimaryButton
-                  label={step === 1 ? 'Next' : 'Generate Encouragement'}
-                  onPress={handleNext}
-                  disabled={step === 1 && !selectedMood}
-                />
-              </View>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </Modal>
 
@@ -505,27 +546,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reasonContainer: {
-    gap: theme.space.xl,
+  // Step 2 confirm screen styles
+  confirmHero: {
+    alignItems: 'center',
+    paddingTop: theme.space.xl,
+    paddingBottom: theme.space.xl,
   },
   reasonChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.space.sm,
+    marginBottom: theme.space.xl,
+  },
+  onColorChip: {
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.sm,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1.5,
   },
   customReasonContainer: {
-    marginTop: theme.space.sm,
+    marginBottom: theme.space.xl,
   },
   customReasonInput: {
     borderWidth: 1,
-    borderColor: theme.color.border,
     borderRadius: theme.radius.sm,
     padding: theme.space.md,
     fontSize: 15,
     fontFamily: theme.font.sans,
-    color: theme.color.text,
-    backgroundColor: theme.color.surface,
-    minHeight: 100,
+    minHeight: 90,
+    backgroundColor: 'transparent',
+  },
+  sendButton: {
+    borderRadius: theme.radius.pill,
+    paddingVertical: theme.space.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.space.md,
   },
   loadingContainer: {
     flex: 1,
