@@ -188,9 +188,28 @@ export default function Home() {
         {/* Verse of the Day */}
         <VerseOfDayCard />
 
-        {/* Generate a Sermon Card */}
+        {/* Daily mood check-in prompt */}
+        <Pressable onPress={() => setMoodModalVisible(true)}>
+          <Card style={styles.moodPromptCard}>
+            <View style={styles.moodPromptContent}>
+              <View style={styles.moodPromptIconWrap}>
+                <Ionicons name="heart-outline" size={22} color={theme.color.accent} />
+              </View>
+              <View style={styles.moodPromptText}>
+                <AppText variant="title" style={styles.moodPromptTitle}>How are you feeling today?</AppText>
+                <AppText variant="caption" style={styles.moodPromptSubtitle}>A quick check-in — takes a few seconds.</AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.color.textMuted} />
+            </View>
+          </Card>
+        </Pressable>
+
+        {/* Daily Reflection Card */}
         <Card style={styles.generateCard}>
-          <AppText variant="title" style={styles.cardTitle}>Daily Reflection</AppText>
+          <View style={styles.cardTitleGroup}>
+            <AppText variant="title" style={styles.cardTitle}>Daily Reflection</AppText>
+            <AppText variant="caption" style={styles.cardSubtitle}>Reflect on Scripture around whatever's on your heart.</AppText>
+          </View>
           <View style={styles.searchRow}>
             <TextInput
               placeholder="e.g. Hope in difficult times"
@@ -215,14 +234,6 @@ export default function Home() {
             </Pressable>
           </View>
           <View style={styles.chipsRow}>
-            {/* Mood Chip — accent-filled, opens mood flow */}
-            <Pressable
-              style={styles.moodChip}
-              onPress={() => setMoodModalVisible(true)}
-            >
-              <Ionicons name="add" size={16} color={theme.color.accentText} />
-              <AppText style={styles.moodChipText}>Mood</AppText>
-            </Pressable>
             {chips.map((c) => (
               <Chip
                 key={c}
@@ -393,8 +404,40 @@ const styles = StyleSheet.create({
     marginTop: theme.space.lg,
     gap: theme.space.md,
   },
+  cardTitleGroup: {
+    gap: 2,
+  },
   cardTitle: {
     // inherits AppText variant="title"
+  },
+  cardSubtitle: {
+    color: theme.color.textMuted,
+  },
+  moodPromptCard: {
+    marginTop: theme.space.lg,
+  },
+  moodPromptContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.md,
+  },
+  moodPromptIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.color.blush,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moodPromptText: {
+    flex: 1,
+    gap: 2,
+  },
+  moodPromptTitle: {
+    // inherits AppText variant="title"
+  },
+  moodPromptSubtitle: {
+    color: theme.color.textMuted,
   },
   searchRow: {
     flexDirection: 'row',
