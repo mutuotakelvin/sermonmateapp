@@ -51,6 +51,14 @@ export default {
         {
           color: "#0891B2"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          photosPermission: "Allow SermonMate to save verse cards to your photos.",
+          savePhotosPermission: "Allow SermonMate to save verse cards to your photos.",
+          isAccessMediaLocationEnabled: false
+        }
       ]
     ],
     experiments: {
