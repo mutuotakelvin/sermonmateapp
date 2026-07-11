@@ -23,7 +23,6 @@ const ShareCard = React.forwardRef<View, Props>(({ content, themeKey, position, 
   return (
     <View ref={ref} collapsable={false} style={[styles.card, { width: w, height: h }]}>
       <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={[styles.bar, { backgroundColor: theme.barColor }]} />
       <View style={[styles.body, { justifyContent, alignItems, paddingBottom: position === 'bottom' ? h * 0.14 : 0 }]}>
         <AppText variant="verse" style={[styles.verse, { color: theme.textColor, textAlign }]}>
           {content.text}
@@ -44,7 +43,6 @@ export default ShareCard;
 
 const styles = StyleSheet.create({
   card: { borderRadius: 20, overflow: 'hidden', position: 'relative' },
-  bar: { position: 'absolute', top: 0, left: 0, right: 0, height: 5 },
   body: { flex: 1, paddingHorizontal: 28, paddingVertical: 40 },
   verse: { fontSize: 22, lineHeight: 32 },
   reference: { marginTop: 14, letterSpacing: 1 },
