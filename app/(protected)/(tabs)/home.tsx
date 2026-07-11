@@ -101,13 +101,13 @@ export default function Home() {
     try {
       const result = await generateSermon(topic.trim());
       setSermon(result);
-      showSuccess('Sermon generated', 'Your sermon is ready');
+      showSuccess('Reflection ready', 'Your reflection is ready to read');
     } catch (error) {
       console.error('Error generating sermon:', error);
       setModalVisible(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       if (errorMessage.includes('network') || errorMessage.includes('Network')) {
-        showError('Network Error', 'Could not reach the sermon service. Please check your internet connection.');
+        showError('Network Error', 'Could not reach the reflection service. Please check your internet connection.');
       } else {
         showError('Generation failed', errorMessage.length > 100 ? errorMessage.substring(0, 100) + '...' : errorMessage);
       }
@@ -146,13 +146,13 @@ export default function Home() {
     setDeleting(true);
     try {
       await deleteSermon(sermonToDelete.id);
-      showSuccess('Sermon deleted', 'The sermon has been deleted permanently');
+      showSuccess('Reflection removed', 'The reflection has been deleted');
       setDeleteModalVisible(false);
       setSermonToDelete(null);
       loadSavedSermons();
     } catch (error) {
       console.error('Error deleting sermon:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete sermon';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete reflection';
       showError('Delete failed', errorMessage);
     } finally {
       setDeleting(false);
@@ -181,7 +181,7 @@ export default function Home() {
             {getTimeGreeting()}, {firstName}
           </AppText>
           <AppText variant="caption" style={styles.subtitle}>
-            Let's prepare something meaningful today
+            A quiet moment with God, one day at a time
           </AppText>
         </View>
 
@@ -190,7 +190,7 @@ export default function Home() {
 
         {/* Generate a Sermon Card */}
         <Card style={styles.generateCard}>
-          <AppText variant="title" style={styles.cardTitle}>Generate a sermon</AppText>
+          <AppText variant="title" style={styles.cardTitle}>Daily Reflection</AppText>
           <View style={styles.searchRow}>
             <TextInput
               placeholder="e.g. Hope in difficult times"
@@ -278,12 +278,12 @@ export default function Home() {
 
         {/* My Sermons */}
         <View style={styles.sermonsSection}>
-          <AppText variant="title" style={styles.sectionTitle}>My Sermons</AppText>
+          <AppText variant="title" style={styles.sectionTitle}>My Reflections</AppText>
           {savedSermons.length === 0 ? (
             <View style={styles.emptyState}>
-              <AppText variant="body" style={styles.emptyStateText}>No saved sermons yet</AppText>
+              <AppText variant="body" style={styles.emptyStateText}>No reflections yet</AppText>
               <AppText variant="caption" style={styles.emptyStateSubtext}>
-                Generate and save your first sermon to see it here
+                Save your first reflection to see it here
               </AppText>
             </View>
           ) : (
@@ -350,8 +350,8 @@ export default function Home() {
       />
       <ConfirmationModal
         visible={deleteModalVisible}
-        title="Delete Sermon?"
-        message="This sermon will be deleted permanently. This action cannot be undone."
+        title="Delete reflection?"
+        message="This reflection will be deleted permanently. This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleConfirmDelete}

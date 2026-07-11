@@ -60,7 +60,7 @@ export default function SermonModal({
 
   // A mood entry's saved title is prefixed "Mood: " — used for the header label.
   const isEncouragement = !!savedSermon?.title?.startsWith('Mood:') || topic.startsWith('Mood:');
-  const headerLabel = isEncouragement ? 'Encouragement' : 'Sermon';
+  const headerLabel = isEncouragement ? 'Encouragement' : 'Reflection';
 
   useLayoutEffect(() => {
     if (!visible) return;
@@ -102,7 +102,7 @@ export default function SermonModal({
 
   const handleSave = async () => {
     if (!displaySermon || !title.trim()) {
-      showError('Error', 'Please enter a title for your sermon');
+      showError('Error', 'Please enter a title for your reflection');
       return;
     }
     setSaving(true);
@@ -116,7 +116,7 @@ export default function SermonModal({
           story: displaySermon.story,
           color: selectedColor,
         });
-        showSuccess('Sermon updated', 'Your sermon has been updated');
+        showSuccess('Reflection updated', 'Your reflection has been updated');
       } else {
         await saveSermonApi({
           title: title.trim(),
@@ -126,13 +126,13 @@ export default function SermonModal({
           color: selectedColor,
           topic,
         });
-        showSuccess('Sermon saved', 'Your sermon has been saved');
+        showSuccess('Reflection saved', 'Your reflection has been saved');
       }
       onSave();
       onClose();
     } catch (error: any) {
       console.error('Error saving sermon:', error);
-      showError('Error', error.message || 'Failed to save sermon');
+      showError('Error', error.message || 'Failed to save reflection');
     } finally {
       setSaving(false);
     }
@@ -159,7 +159,7 @@ export default function SermonModal({
         {loading || !displaySermon ? (
           <View style={styles.loading}>
             <ActivityIndicator size="large" color={theme.color.accent} />
-            <AppText variant="body" style={styles.loadingText}>Preparing your sermon…</AppText>
+            <AppText variant="body" style={styles.loadingText}>{isEncouragement ? 'Creating your encouragement…' : 'Preparing your reflection…'}</AppText>
           </View>
         ) : (
           <>
@@ -169,7 +169,7 @@ export default function SermonModal({
                 style={styles.title}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Sermon title"
+                placeholder="Reflection title"
                 placeholderTextColor={theme.color.textMuted}
                 editable={!savedSermon}
                 multiline
@@ -230,7 +230,7 @@ export default function SermonModal({
             {/* Sticky Save bar */}
             <View style={styles.saveBar}>
               <PrimaryButton
-                label={savedSermon ? 'Update' : 'Save sermon'}
+                label={savedSermon ? 'Update' : 'Save reflection'}
                 onPress={handleSave}
                 loading={saving}
                 style={styles.saveButton}

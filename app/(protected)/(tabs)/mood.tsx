@@ -400,7 +400,7 @@ export default function MoodTab() {
                         style={modalStyles.viewSermonButton}
                         onPress={handleViewSermon}
                       >
-                        <AppText style={modalStyles.viewSermonButtonText}>View Full Sermon</AppText>
+                        <AppText style={modalStyles.viewSermonButtonText}>View Encouragement</AppText>
                       </Pressable>
                     </View>
                   )}
