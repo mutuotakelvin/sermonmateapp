@@ -333,9 +333,9 @@ export default function Home() {
           )}
         </View>
 
-        {/* Create a Wallpaper */}
+        {/* Create a card */}
         <Pressable
-          onPress={() => showSuccess('Coming soon', 'Wallpapers arrive in a future update')}
+          onPress={() => router.push('/(protected)/card' as never)}
           style={styles.wallpaperRow}
         >
           <Card style={styles.wallpaperCard}>
@@ -343,7 +343,10 @@ export default function Home() {
               <View style={styles.wallpaperIconWrap}>
                 <Ionicons name="image-outline" size={22} color={theme.color.accent} />
               </View>
-              <AppText variant="body" style={styles.wallpaperLabel}>Create a Wallpaper</AppText>
+              <View style={styles.wallpaperText}>
+                <AppText variant="body" style={styles.wallpaperLabel}>Create a card</AppText>
+                <AppText variant="caption" style={styles.wallpaperSub}>Share a verse or save it as a wallpaper</AppText>
+              </View>
               <Ionicons name="chevron-forward" size={20} color={theme.color.textMuted} />
             </View>
           </Card>
@@ -605,7 +608,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wallpaperLabel: {
-    flex: 1,
     color: theme.color.text,
+  },
+  wallpaperText: {
+    flex: 1,
+    gap: 2,
+  },
+  wallpaperSub: {
+    color: theme.color.textMuted,
   },
 });

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import React, { useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ import { useToast } from '@/components/ToastProvider';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { splitVerseString } from '@/lib/cards';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
 import { theme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
@@ -50,6 +52,7 @@ export default function SermonModal({
   loading = false,
 }: SermonModalProps) {
   const { showSuccess, showError, showInfo } = useToast();
+  const router = useRouter();
   const [title, setTitle] = useState(topic);
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].id);
   const [saving, setSaving] = useState(false);
@@ -80,6 +83,17 @@ export default function SermonModal({
     } catch {
       showError('Error', 'Failed to copy to clipboard');
     }
+  };
+
+  const handleCreateCard = () => {
+    const first = displaySermon?.verses?.[0];
+    if (!first) return;
+    const c = splitVerseString(first);
+    onClose(); // close the full-screen modal so the card route is visible beneath it
+    router.push({
+      pathname: '/(protected)/card',
+      params: { text: c.text, reference: c.reference ?? '' },
+    } as never);
   };
 
   const handleShare = async () => {
@@ -235,6 +249,11 @@ export default function SermonModal({
                 loading={saving}
                 style={styles.saveButton}
               />
+              {!!displaySermon?.verses?.length && (
+                <Pressable onPress={handleCreateCard} style={styles.shareBtn} hitSlop={8}>
+                  <Ionicons name="image-outline" size={22} color={theme.color.text} />
+                </Pressable>
+              )}
               <Pressable onPress={handleShare} style={styles.shareBtn}>
                 <Ionicons name="share-outline" size={22} color={theme.color.text} />
               </Pressable>

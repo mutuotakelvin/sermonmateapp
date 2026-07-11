@@ -42,6 +42,13 @@ export default function VerseScreen() {
       .then((active) => setPermissionDenied(reminderEnabled && !active));
   }, [reminderEnabled, reminderHour, reminderMinute, translation]);
 
+  const handleCreateCard = () => {
+    router.push({
+      pathname: '/(protected)/card',
+      params: { text: verse.text[translation], reference: verse.reference },
+    } as never);
+  };
+
   const handleShare = async () => {
     try {
       await Share.share({ message: formatVerseForShare(verse, translation) });
@@ -91,6 +98,9 @@ export default function VerseScreen() {
             </Pressable>
             <Pressable onPress={handleCopy} style={styles.actionButton} hitSlop={4}>
               <Ionicons name="copy-outline" size={22} color={theme.color.paper} />
+            </Pressable>
+            <Pressable onPress={handleCreateCard} style={styles.actionButton} hitSlop={4}>
+              <Ionicons name="image-outline" size={22} color={theme.color.text} />
             </Pressable>
           </View>
         </Card>
