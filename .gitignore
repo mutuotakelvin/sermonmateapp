@@ -44,3 +44,6 @@ app-example
 
 # Use npm/package-lock.json as the source of truth for builds (EAS bun ≠ local bun format)
 bun.lockb
+
+# Superpowers scratch (ledger, brainstorm mockups)
+.superpowers/
