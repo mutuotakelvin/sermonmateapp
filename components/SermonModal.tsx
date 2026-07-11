@@ -59,7 +59,7 @@ export default function SermonModal({
     : sermon;
 
   // A mood entry's saved title is prefixed "Mood: " — used for the header label.
-  const isEncouragement = !!savedSermon?.title?.startsWith('Mood:');
+  const isEncouragement = !!savedSermon?.title?.startsWith('Mood:') || topic.startsWith('Mood:');
   const headerLabel = isEncouragement ? 'Encouragement' : 'Sermon';
 
   useLayoutEffect(() => {
