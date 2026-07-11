@@ -32,11 +32,11 @@ export default function CardScreen() {
 
   const [themeKey, setThemeKey] = useState<CardThemeKey>('cream');
   const [position, setPosition] = useState<CardPosition>('centered');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'share' | 'save' | null>(null);
   const cardRef = useRef<View>(null);
 
   const onShare = async () => {
-    setBusy(true);
+    setBusy('share');
     try {
       const uri = await captureCardToFile(cardRef);
       const ok = await shareCardImage(uri);
@@ -44,12 +44,12 @@ export default function CardScreen() {
     } catch {
       showError('Share failed', 'Could not create the card image.');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
   const onSave = async () => {
-    setBusy(true);
+    setBusy('save');
     try {
       const uri = await captureCardToFile(cardRef);
       const result = await saveCardImage(uri);
@@ -58,7 +58,7 @@ export default function CardScreen() {
     } catch {
       showError('Save failed', 'Could not save the card image.');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
@@ -107,9 +107,9 @@ export default function CardScreen() {
         </View>
 
         <View style={styles.actions}>
-          <PrimaryButton label="Share" onPress={onShare} loading={busy} style={styles.shareBtn} />
-          <Pressable onPress={onSave} disabled={busy} style={styles.saveBtn}>
-            {busy ? (
+          <PrimaryButton label="Share" onPress={onShare} loading={busy === 'share'} disabled={busy !== null} style={styles.shareBtn} />
+          <Pressable onPress={onSave} disabled={busy !== null} style={styles.saveBtn}>
+            {busy === 'save' ? (
               <ActivityIndicator color={theme.color.accent} />
             ) : (
               <>
