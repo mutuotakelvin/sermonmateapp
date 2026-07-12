@@ -67,9 +67,9 @@ export default {
     },
     extra: {
       router: {},
-      // RevenueCat PUBLIC SDK key (safe to embed). Dev = test key; swap the
-      // production `goog_…` Android key for release builds.
-      revenueCatAndroidKey: "test_mjRkcgiEYcLDcfMeljRIjuuhTvd",
+      // RevenueCat PUBLIC SDK key (safe to embed). This is the production
+      // Google `goog_…` API key from RevenueCat → Project → API keys.
+      revenueCatAndroidKey: "goog_QDJRtNjQizFwKfCUUdOIBXYBylZ",
       // Firebase Google provider's WEB OAuth client ID (public, safe to embed).
       // Paste the "Web client (auto created by Google Service)" ID from
       // Firebase → Authentication → Google → Web SDK configuration.
