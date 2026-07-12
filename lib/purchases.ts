@@ -15,8 +15,15 @@ export function configurePurchases(): void {
     console.warn('RevenueCat key missing from app config extra; skipping configure.');
     return;
   }
-  Purchases.configure({ apiKey: API_KEY });
-  configured = true;
+  // Never let a missing/uninitialized native module crash the app at startup —
+  // configurePurchases() runs at module load. Degrade to "not configured" so the
+  // rest of the app (and the guarded purchase actions) keep working.
+  try {
+    Purchases.configure({ apiKey: API_KEY });
+    configured = true;
+  } catch (err) {
+    console.warn('RevenueCat native module unavailable; purchases disabled until a rebuild.', err);
+  }
 }
 
 export async function identifyPurchaser(uid: string): Promise<void> {
