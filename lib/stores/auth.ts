@@ -1,13 +1,20 @@
 import { create } from 'zustand';
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import {
+  GooglePlayServicesError,
+  GoogleSignInCancelled,
+  signInWithGoogleIdToken,
+} from '../googleSignin';
 
 export interface User {
   id: string;
@@ -26,6 +33,7 @@ interface AuthState {
 
   // Actions
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; message?: string; cancelled?: boolean }>;
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
@@ -52,6 +60,15 @@ function authErrorMessage(code: string | undefined): string {
     default:
       return 'Something went wrong. Please try again.';
   }
+}
+
+// Map Google/Firebase credential errors to friendly messages. The SDK-specific
+// cancel/Play-services cases are handled by the caller via typed errors.
+function googleAuthErrorMessage(error: { code?: string }): string {
+  if (error?.code === 'auth/account-exists-with-different-credential') {
+    return 'This email is already registered — sign in with your password.';
+  }
+  return 'Google sign-in failed. Please try again.';
 }
 
 // Fetch the Firestore profile for a signed-in Firebase user,
@@ -115,6 +132,29 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error('Login error:', error?.code, error?.message);
       set({ isLoading: false });
       return { success: false, message: authErrorMessage(error?.code) };
+    }
+  },
+
+  loginWithGoogle: async () => {
+    set({ isLoading: true });
+    try {
+      const idToken = await signInWithGoogleIdToken();
+      const credential = GoogleAuthProvider.credential(idToken);
+      const result = await signInWithCredential(auth, credential);
+      const user = await fetchUserProfile(result.user);
+
+      set({ user, isAuthenticated: true, isLoading: false });
+      return { success: true };
+    } catch (error: any) {
+      set({ isLoading: false });
+      if (error instanceof GoogleSignInCancelled) {
+        return { success: false, cancelled: true };
+      }
+      if (error instanceof GooglePlayServicesError) {
+        return { success: false, message: 'Google Play services is required to sign in with Google.' };
+      }
+      console.error('Google login error:', error?.code, error?.message);
+      return { success: false, message: googleAuthErrorMessage(error) };
     }
   },
 
