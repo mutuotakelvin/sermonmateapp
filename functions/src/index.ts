@@ -1,4 +1,4 @@
-import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import Anthropic from "@anthropic-ai/sdk";
 import { initializeApp, getApps } from "firebase-admin/app";
@@ -8,6 +8,9 @@ import { getFirestore } from "firebase-admin/firestore";
 // the function at runtime, and NEVER shipped in the mobile app. Set it once with:
 //   firebase functions:secrets:set ANTHROPIC_API_KEY
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
+const REVENUECAT_SECRET_KEY = defineSecret("REVENUECAT_SECRET_KEY");
+const REVENUECAT_WEBHOOK_AUTH = defineSecret("REVENUECAT_WEBHOOK_AUTH");
+const RC_ENTITLEMENT = "sermonmate Pro";
 
 if (!getApps().length) initializeApp();
 
@@ -55,6 +58,25 @@ async function refundAiQuota(uid: string): Promise<void> {
   } catch (err) {
     console.error("Quota refund failed:", err);
   }
+}
+
+// Read the user's live entitlement from RevenueCat's REST API and mirror it
+// into users/{uid}.pro (the server's trusted flag). Returns the new value.
+async function refreshProFromRevenueCat(uid: string): Promise<boolean> {
+  const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(uid)}`, {
+    headers: { Authorization: `Bearer ${REVENUECAT_SECRET_KEY.value()}` },
+  });
+  if (!res.ok) {
+    console.error("RevenueCat subscriber fetch failed:", res.status);
+    throw new HttpsError("unavailable", "Could not verify your subscription. Please try again.");
+  }
+  const body = (await res.json()) as {
+    subscriber?: { entitlements?: Record<string, { expires_date?: string | null }> };
+  };
+  const ent = body.subscriber?.entitlements?.[RC_ENTITLEMENT];
+  const isPro = !!ent && (ent.expires_date == null || new Date(ent.expires_date).getTime() > Date.now());
+  await getFirestore().doc(`users/${uid}`).set({ pro: isPro }, { merge: true });
+  return isPro;
 }
 
 // Cheapest capable Claude model — a sermon costs a fraction of a cent here.
@@ -185,6 +207,41 @@ export const generateMoodSermon = onCall(
     } catch (err) {
       await refundAiQuota(uid);
       throw err;
+    }
+  }
+);
+
+// Client calls this right after a purchase/restore and on app launch, so a
+// buyer is never gated by webhook lag.
+export const syncEntitlement = onCall(
+  { secrets: [REVENUECAT_SECRET_KEY] },
+  async (request) => {
+    requireAuth(request);
+    const pro = await refreshProFromRevenueCat(request.auth!.uid);
+    return { pro };
+  }
+);
+
+// Background lifecycle events (renewal, cancellation, billing issue, refund).
+// Verified with a shared secret set as the webhook's Authorization header.
+export const revenuecatWebhook = onRequest(
+  { secrets: [REVENUECAT_SECRET_KEY, REVENUECAT_WEBHOOK_AUTH] },
+  async (req, res) => {
+    if (req.header("Authorization") !== REVENUECAT_WEBHOOK_AUTH.value()) {
+      res.status(401).send("unauthorized");
+      return;
+    }
+    const uid = req.body?.event?.app_user_id;
+    if (!uid || typeof uid !== "string") {
+      res.status(400).send("missing app_user_id");
+      return;
+    }
+    try {
+      await refreshProFromRevenueCat(uid);
+      res.status(200).send("ok");
+    } catch (err) {
+      console.error("Webhook processing failed:", err);
+      res.status(500).send("error");
     }
   }
 );
