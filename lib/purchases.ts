@@ -41,17 +41,16 @@ export async function getIsPro(): Promise<boolean> {
 }
 
 export async function presentPaywall(): Promise<boolean> {
+  configurePurchases();
+  if (!configured) return false;
   const result = await RevenueCatUI.presentPaywall();
   return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
 }
 
 export async function presentCustomerCenter(): Promise<void> {
+  configurePurchases();
+  if (!configured) return;
   await RevenueCatUI.presentCustomerCenter();
-}
-
-export async function restorePurchases(): Promise<boolean> {
-  const info = await Purchases.restorePurchases();
-  return isProFromInfo(info);
 }
 
 export function addProListener(cb: (isPro: boolean) => void): () => void {

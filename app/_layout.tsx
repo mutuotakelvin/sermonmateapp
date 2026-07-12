@@ -58,6 +58,19 @@ export default function RootLayout() {
     return () => { cancelled = true; };
   }, [authUserId, setPro]);
 
+  // Re-verify Pro entitlement whenever the app returns to the foreground, so a
+  // buyer who hit a transient RevenueCat/webhook hiccup self-heals.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && useAuthStore.getState().user?.id) {
+        syncEntitlement()
+          .then(() => usePurchasesStore.getState().refresh())
+          .catch(() => { /* webhook will backstop */ });
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
   // Hide the splash once fonts are ready (or failed — don't block the app on a font).
   useEffect(() => {
     if (fontsLoaded || fontError) {

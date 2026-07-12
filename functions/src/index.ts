@@ -1,4 +1,5 @@
 import { onCall, onRequest, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+import { timingSafeEqual } from "crypto";
 import { defineSecret } from "firebase-functions/params";
 import Anthropic from "@anthropic-ai/sdk";
 import { initializeApp, getApps } from "firebase-admin/app";
@@ -227,7 +228,12 @@ export const syncEntitlement = onCall(
 export const revenuecatWebhook = onRequest(
   { secrets: [REVENUECAT_SECRET_KEY, REVENUECAT_WEBHOOK_AUTH] },
   async (req, res) => {
-    if (req.header("Authorization") !== REVENUECAT_WEBHOOK_AUTH.value()) {
+    // The RevenueCat dashboard must send this EXACT secret as the Authorization
+    // header VALUE (no "Bearer " prefix). Constant-time compare to avoid leaking
+    // the secret via response timing.
+    const providedBuf = Buffer.from(req.header("Authorization") ?? "");
+    const expectedBuf = Buffer.from(REVENUECAT_WEBHOOK_AUTH.value());
+    if (providedBuf.length !== expectedBuf.length || !timingSafeEqual(providedBuf, expectedBuf)) {
       res.status(401).send("unauthorized");
       return;
     }
