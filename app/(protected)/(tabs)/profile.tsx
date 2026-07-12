@@ -15,9 +15,32 @@ import { theme } from '@/lib/theme';
 import Screen from '@/components/ui/Screen';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
+import { useToast } from '@/components/ToastProvider';
+import { presentPaywall, presentCustomerCenter, syncEntitlement } from '@/lib/purchases';
+import { usePurchasesStore } from '@/lib/stores/purchases';
 
 export default function Profile() {
   const { user, logout } = useAuthStore();
+  const isPro = usePurchasesStore((s) => s.isPro);
+  const refreshPro = usePurchasesStore((s) => s.refresh);
+  const { showInfo } = useToast();
+
+  const handleUpgrade = async () => {
+    const bought = await presentPaywall();
+    if (bought) {
+      try { await syncEntitlement(); } catch { /* webhook will backstop */ }
+      await refreshPro();
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await presentCustomerCenter();
+      await refreshPro();
+    } catch {
+      showInfo('Unavailable', 'Subscription management is not available right now.');
+    }
+  };
 
   const getInitials = () => {
     if (!user?.name) return 'U';
@@ -103,6 +126,23 @@ export default function Profile() {
           </View>
           <AppText variant="display" style={styles.name}>{user?.name || 'User'}</AppText>
           <AppText variant="caption" style={styles.email}>{user?.email || ''}</AppText>
+        </Card>
+
+        {/* SermonMate Pro */}
+        <Card style={styles.actionsCard}>
+          {isPro ? (
+            <TouchableOpacity style={styles.actionRow} onPress={handleManageSubscription} activeOpacity={0.7}>
+              <Ionicons name="sparkles" size={20} color={theme.color.accent} />
+              <AppText variant="body" style={styles.actionText}>SermonMate Pro · Active</AppText>
+              <AppText variant="caption" style={styles.manageLink}>Manage</AppText>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.actionRow} onPress={handleUpgrade} activeOpacity={0.7}>
+              <Ionicons name="sparkles-outline" size={20} color={theme.color.accent} />
+              <AppText variant="body" style={styles.upgradeText}>Upgrade to SermonMate Pro</AppText>
+              <Ionicons name="chevron-forward" size={16} color={theme.color.accent} />
+            </TouchableOpacity>
+          )}
         </Card>
 
         {/* Account Actions */}
@@ -194,6 +234,14 @@ const styles = StyleSheet.create({
   actionText: {
     flex: 1,
     color: theme.color.text,
+  },
+  upgradeText: {
+    flex: 1,
+    color: theme.color.accent,
+    fontFamily: theme.font.sansSemibold,
+  },
+  manageLink: {
+    color: theme.color.accent,
   },
   deleteText: {
     flex: 1,

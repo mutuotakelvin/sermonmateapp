@@ -15,7 +15,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useToast } from '@/components/ToastProvider';
-import { generateMoodSermon } from '@/lib/sermonAi';
+import { generateMoodSermon, AiLimitError } from '@/lib/sermonAi';
+import { presentPaywall, syncEntitlement } from '@/lib/purchases';
+import { usePurchasesStore } from '@/lib/stores/purchases';
 import { useMoodStore } from '@/lib/stores/mood';
 import type { MoodType, MoodEntry, Sermon } from '@/lib/types';
 import { getReasonsForMood } from '@/lib/moodReasons';
@@ -160,7 +162,9 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
     }
   };
 
-  const handleGenerateSermon = async () => {
+  const handleGenerateSermon = () => runGenerateMood(false);
+
+  const runGenerateMood = async (isRetry: boolean) => {
     if (!selectedMood) return;
 
     setLoading(true);
@@ -191,6 +195,22 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
       setSermonModalVisible(true);
       showSuccess('Mood recorded', 'Your encouragement is ready');
     } catch (error) {
+      if (error instanceof AiLimitError) {
+        setStep(2);
+        setLoading(false);
+        if (error.kind === 'free' && !isRetry) {
+          const bought = await presentPaywall();
+          if (bought) {
+            try { await syncEntitlement(); } catch { /* webhook will backstop */ }
+            await usePurchasesStore.getState().refresh();
+            await runGenerateMood(true);
+            return;
+          }
+        } else if (error.kind === 'pro') {
+          showError('Daily limit reached', "You've hit today's high usage limit. Try again tomorrow.");
+        }
+        return;
+      }
       console.error('Error generating mood sermon:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate encouragement';
       showError('Generation failed', errorMessage);

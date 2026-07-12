@@ -7,7 +7,9 @@ import Screen from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
 import AppText from "@/components/ui/AppText";
 import Chip from "@/components/ui/Chip";
-import { generateSermon } from "@/lib/sermonAi";
+import { generateSermon, AiLimitError } from "@/lib/sermonAi";
+import { presentPaywall, syncEntitlement } from "@/lib/purchases";
+import { usePurchasesStore } from "@/lib/stores/purchases";
 import { getSermons, deleteSermon } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useMoodStore } from "@/lib/stores/mood";
@@ -91,7 +93,9 @@ export default function Home() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => runGenerate(false);
+
+  const runGenerate = async (isRetry: boolean) => {
     if (!topic.trim()) return;
     setSermon(null);
     setEditingSermon(null);
@@ -103,8 +107,22 @@ export default function Home() {
       setSermon(result);
       showSuccess('Reflection ready', 'Your reflection is ready to read');
     } catch (error) {
-      console.error('Error generating sermon:', error);
       setModalVisible(false);
+      if (error instanceof AiLimitError) {
+        if (error.kind === 'free' && !isRetry) {
+          const bought = await presentPaywall();
+          if (bought) {
+            try { await syncEntitlement(); } catch { /* webhook will backstop */ }
+            await usePurchasesStore.getState().refresh();
+            await runGenerate(true);
+            return;
+          }
+        } else if (error.kind === 'pro') {
+          showError('Daily limit reached', "You've hit today's high usage limit. Try again tomorrow.");
+        }
+        return;
+      }
+      console.error('Error generating sermon:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       if (errorMessage.includes('network') || errorMessage.includes('Network')) {
         showError('Network Error', 'Could not reach the reflection service. Please check your internet connection.');
