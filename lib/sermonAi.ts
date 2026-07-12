@@ -2,6 +2,20 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import type { Sermon, MoodType } from './types';
 
+export class AiLimitError extends Error {
+  constructor(public kind: 'free' | 'pro') {
+    super('AI_LIMIT_REACHED');
+    this.name = 'AiLimitError';
+  }
+}
+
+function toAiError(error: any): Error {
+  if (error?.code === 'functions/resource-exhausted') {
+    return new AiLimitError(error?.message === 'PRO_SOFT_LIMIT' ? 'pro' : 'free');
+  }
+  return new Error(error?.message || 'Failed to generate. Please try again.');
+}
+
 /**
  * Generate a sermon for a topic.
  *
@@ -15,7 +29,7 @@ export async function generateSermon(topic: string): Promise<Sermon> {
     return result.data;
   } catch (error: any) {
     console.error('Error generating sermon:', error?.code, error?.message);
-    throw new Error(error?.message || 'Failed to generate sermon. Please try again.');
+    throw toAiError(error);
   }
 }
 
@@ -38,6 +52,6 @@ export async function generateMoodSermon(
     return result.data;
   } catch (error: any) {
     console.error('Error generating mood sermon:', error?.code, error?.message);
-    throw new Error(error?.message || 'Failed to generate sermon. Please try again.');
+    throw toAiError(error);
   }
 }

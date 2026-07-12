@@ -8,10 +8,14 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { ToastProvider } from '@/components/ToastProvider';
 import { configureNotifications, rescheduleDailyVerse } from '@/lib/notifications';
+import { configurePurchases, identifyPurchaser, logoutPurchaser, addProListener, syncEntitlement } from '@/lib/purchases';
 import { useVerseStore } from '@/lib/stores/verse';
+import { usePurchasesStore } from '@/lib/stores/purchases';
+import { useAuthStore } from '@/lib/stores/auth';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
+configurePurchases();
 
 export default function RootLayout() {
   const router = useRouter();
@@ -25,6 +29,34 @@ export default function RootLayout() {
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const { initialized, initializeVerseSettings } = useVerseStore();
   const handledResponseId = useRef<string | null>(null);
+  const authUserId = useAuthStore((s) => s.user?.id);
+  const setPro = usePurchasesStore((s) => s.setPro);
+
+  // Keep the Pro flag live from RevenueCat's SDK.
+  useEffect(() => {
+    const remove = addProListener((isPro) => setPro(isPro));
+    return remove;
+  }, [setPro]);
+
+  // On sign-in: identify the purchaser + sync entitlement. On sign-out: clear.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (authUserId) {
+        try {
+          await identifyPurchaser(authUserId);
+          await syncEntitlement();
+        } catch (err) {
+          console.warn('Entitlement sync failed', err);
+        }
+        if (!cancelled) await usePurchasesStore.getState().refresh();
+      } else {
+        try { await logoutPurchaser(); } catch { /* not configured yet */ }
+        setPro(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [authUserId, setPro]);
 
   // Hide the splash once fonts are ready (or failed — don't block the app on a font).
   useEffect(() => {
