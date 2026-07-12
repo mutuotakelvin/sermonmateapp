@@ -73,7 +73,7 @@ export default {
       // Firebase Google provider's WEB OAuth client ID (public, safe to embed).
       // Paste the "Web client (auto created by Google Service)" ID from
       // Firebase → Authentication → Google → Web SDK configuration.
-      googleWebClientId: "",
+      googleWebClientId: "879460367628-1nul0ego66l1o87m82k7d43hn5dpm4f4.apps.googleusercontent.com",
       eas: {
         projectId: "9d737b63-33ca-4168-bfae-f89e8d3415df"
       },
