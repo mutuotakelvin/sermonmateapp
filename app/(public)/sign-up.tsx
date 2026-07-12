@@ -1,4 +1,5 @@
 import { useToast } from '@/components/ToastProvider';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { useAuthStore } from '@/lib/stores/auth';
 import { theme } from '@/lib/theme';
 import AppText from '@/components/ui/AppText';
@@ -172,6 +173,8 @@ export default function RegisterScreen() {
                 disabled={isLoading}
                 style={styles.submitButton}
               />
+
+              <GoogleSignInButton />
             </View>
 
             <View style={styles.footer}>
