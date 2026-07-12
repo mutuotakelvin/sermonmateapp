@@ -22,19 +22,19 @@ function utcDay(): string {
 // resource-exhausted when over the caller's limit (free vs Pro).
 async function enforceAiQuota(uid: string): Promise<void> {
   const db = getFirestore();
-  const userSnap = await db.doc(`users/${uid}`).get();
-  const isPro = userSnap.exists && userSnap.get("pro") === true;
-  const limit = isPro ? PRO_DAILY_LIMIT : FREE_DAILY_LIMIT;
   const day = utcDay();
-  const ref = db.doc(`usage/${uid}`);
+  const userRef = db.doc(`users/${uid}`);
+  const usageRef = db.doc(`usage/${uid}`);
   await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const data = snap.exists ? snap.data() ?? {} : {};
+    const [userSnap, usageSnap] = await Promise.all([tx.get(userRef), tx.get(usageRef)]);
+    const isPro = userSnap.exists && userSnap.get("pro") === true;
+    const limit = isPro ? PRO_DAILY_LIMIT : FREE_DAILY_LIMIT;
+    const data = usageSnap.exists ? usageSnap.data() ?? {} : {};
     const count = data.day === day ? (data.count ?? 0) : 0;
     if (count >= limit) {
       throw new HttpsError("resource-exhausted", isPro ? "PRO_SOFT_LIMIT" : "FREE_LIMIT_REACHED");
     }
-    tx.set(ref, { day, count: count + 1 }, { merge: true });
+    tx.set(usageRef, { day, count: count + 1 }, { merge: true });
   });
 }
 
