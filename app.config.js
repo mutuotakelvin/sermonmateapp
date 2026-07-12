@@ -59,7 +59,8 @@ export default {
           savePhotosPermission: "Allow SermonMate to save verse cards to your photos.",
           isAccessMediaLocationEnabled: false
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     experiments: {
       typedRoutes: true
@@ -69,6 +70,10 @@ export default {
       // RevenueCat PUBLIC SDK key (safe to embed). Dev = test key; swap the
       // production `goog_…` Android key for release builds.
       revenueCatAndroidKey: "test_mjRkcgiEYcLDcfMeljRIjuuhTvd",
+      // Firebase Google provider's WEB OAuth client ID (public, safe to embed).
+      // Paste the "Web client (auto created by Google Service)" ID from
+      // Firebase → Authentication → Google → Web SDK configuration.
+      googleWebClientId: "",
       eas: {
         projectId: "9d737b63-33ca-4168-bfae-f89e8d3415df"
       },
