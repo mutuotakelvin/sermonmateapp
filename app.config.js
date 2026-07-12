@@ -66,6 +66,9 @@ export default {
     },
     extra: {
       router: {},
+      // RevenueCat PUBLIC SDK key (safe to embed). Dev = test key; swap the
+      // production `goog_…` Android key for release builds.
+      revenueCatAndroidKey: "test_mjRkcgiEYcLDcfMeljRIjuuhTvd",
       eas: {
         projectId: "9d737b63-33ca-4168-bfae-f89e8d3415df"
       },
