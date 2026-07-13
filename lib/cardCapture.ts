@@ -21,7 +21,9 @@ export async function shareCardImage(uri: string): Promise<boolean> {
 
 // Save an image file to the photo library. Requests permission first.
 export async function saveCardImage(uri: string): Promise<'saved' | 'denied'> {
-  const perm = await MediaLibrary.requestPermissionsAsync();
+  // Write-only: we only save cards to the gallery, never read the user's media.
+  // Passing true avoids requesting the broad READ_MEDIA_* permissions.
+  const perm = await MediaLibrary.requestPermissionsAsync(true);
   if (!perm.granted) return 'denied';
   await MediaLibrary.saveToLibraryAsync(uri);
   return 'saved';

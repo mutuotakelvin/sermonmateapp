@@ -21,12 +21,21 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.sermonmate.app",
-      versionCode: 15,
+      versionCode: 16,
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
         "android.permission.WAKE_LOCK",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      // We only SAVE verse cards to the gallery (write-only), never read the
+      // user's media, so strip the broad read-media permissions that
+      // expo-media-library declares by default. This clears Google Play's
+      // "undeclared photo and video permissions" review flag.
+      blockedPermissions: [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
       ]
     },
     web: {
