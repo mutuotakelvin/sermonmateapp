@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "SermonMate",
     slug: "sermonmate",
-    version: "1.1.0",
+    version: "1.2.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "sermonmate",
@@ -21,7 +21,7 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.sermonmate.app",
-      versionCode: 11,
+      versionCode: 15,
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",

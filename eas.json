@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 7.6.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -18,7 +18,7 @@
       }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=4096"
       }
