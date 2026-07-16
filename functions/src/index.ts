@@ -86,7 +86,6 @@ const MODEL = "claude-haiku-4-5";
 interface Sermon {
   verses: string[];
   interpretation: string;
-  story: string;
 }
 
 const MOOD_CONTEXT: Record<string, string> = {
@@ -102,11 +101,11 @@ const MOOD_CONTEXT: Record<string, string> = {
 
 const SYSTEM_PROMPT =
   "You are a compassionate Christian assistant that writes short, encouraging " +
-  "sermon content. Reply with ONLY valid minified JSON — no markdown, no code " +
+  "reflection content. Reply with ONLY valid minified JSON — no markdown, no code " +
   "fences, no commentary — using exactly these keys: verses (an array of 2 " +
   "strings, each a Bible verse reference followed by its text), interpretation " +
-  "(a string), story (a string). Example: " +
-  '{"verses":["John 3:16 - For God so loved...","..."],"interpretation":"...","story":"..."}';
+  "(a string). Example: " +
+  '{"verses":["John 3:16 - For God so loved...","..."],"interpretation":"..."}';
 
 // Shared: call Claude with a user prompt and parse the sermon JSON out of the reply.
 async function generate(userPrompt: string): Promise<Sermon> {
@@ -145,7 +144,7 @@ async function generate(userPrompt: string): Promise<Sermon> {
     throw new HttpsError("internal", "The generated sermon was malformed. Please try again.");
   }
 
-  if (!Array.isArray(sermon.verses) || sermon.verses.length < 1 || !sermon.interpretation || !sermon.story) {
+  if (!Array.isArray(sermon.verses) || sermon.verses.length < 1 || !sermon.interpretation) {
     console.error("Sermon failed validation:", JSON.stringify(sermon));
     throw new HttpsError("internal", "The generated sermon was incomplete. Please try again.");
   }
@@ -153,9 +152,47 @@ async function generate(userPrompt: string): Promise<Sermon> {
   return {
     verses: sermon.verses,
     interpretation: sermon.interpretation,
-    story: sermon.story,
   };
 }
+
+// Plain-text generation (no JSON schema) — used by story/prayer follow-ups.
+async function generateText(systemPrompt: string, userPrompt: string): Promise<string> {
+  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+  let response;
+  try {
+    response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+  } catch (err: unknown) {
+    console.error("Anthropic request failed:", err);
+    throw new HttpsError("unavailable", "The service is temporarily unavailable. Please try again.");
+  }
+
+  if (response.stop_reason === "refusal") {
+    throw new HttpsError("failed-precondition", "That request could not be completed. Try again.");
+  }
+
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new HttpsError("internal", "No content was returned. Please try again.");
+  }
+
+  return textBlock.text.trim();
+}
+
+const STORY_SYSTEM_PROMPT =
+  "You are a compassionate Christian assistant. Write a short, vivid story of 2-3 short " +
+  "paragraphs that illustrates the heart of the reflection the user shares. Reply with " +
+  "ONLY the story text — no title, no preamble, no markdown, no code fences.";
+
+const PRAYER_SYSTEM_PROMPT =
+  "You are a compassionate Christian assistant. Write a short, heartfelt prayer of a few " +
+  "sentences that responds to the reflection the user shares. Reply with ONLY the prayer " +
+  "text — no title, no preamble, no markdown, no code fences.";
 
 // Callable functions verify the Firebase Auth token automatically, so only
 // signed-in users of the app can invoke these (caps abuse of the paid API).
@@ -209,6 +246,40 @@ export const generateMoodSermon = onCall(
       await refundAiQuota(uid);
       throw err;
     }
+  }
+);
+
+// Quota-free follow-up: a short story illustrating a reflection the user already generated.
+export const generateStory = onCall(
+  { secrets: [ANTHROPIC_API_KEY] },
+  async (request) => {
+    requireAuth(request);
+    const context = String(request.data?.context ?? "").trim();
+    if (!context) {
+      throw new HttpsError("invalid-argument", "Context is required.");
+    }
+    const story = await generateText(
+      STORY_SYSTEM_PROMPT,
+      `Reflection: "${context}". Write a short story that illustrates it.`
+    );
+    return { story };
+  }
+);
+
+// Quota-free follow-up: a short prayer responding to a reflection the user already generated.
+export const generatePrayer = onCall(
+  { secrets: [ANTHROPIC_API_KEY] },
+  async (request) => {
+    requireAuth(request);
+    const context = String(request.data?.context ?? "").trim();
+    if (!context) {
+      throw new HttpsError("invalid-argument", "Context is required.");
+    }
+    const prayer = await generateText(
+      PRAYER_SYSTEM_PROMPT,
+      `Reflection: "${context}". Write a short prayer responding to it.`
+    );
+    return { prayer };
   }
 );
 
