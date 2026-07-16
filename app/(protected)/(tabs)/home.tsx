@@ -326,6 +326,25 @@ export default function Home() {
             </View>
           </Card>
         </Pressable>
+
+        {/* Wallpapers */}
+        <Pressable
+          onPress={() => router.push('/(protected)/wallpapers' as never)}
+          style={styles.wallpaperRow}
+        >
+          <Card style={styles.wallpaperCard}>
+            <View style={styles.wallpaperContent}>
+              <View style={styles.wallpaperIconWrap}>
+                <Ionicons name="color-palette-outline" size={22} color={theme.color.accent} />
+              </View>
+              <View style={styles.wallpaperText}>
+                <AppText variant="body" style={styles.wallpaperLabel}>Wallpapers</AppText>
+                <AppText variant="caption" style={styles.wallpaperSub}>Make a wallpaper from a verse or reflection</AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.color.textMuted} />
+            </View>
+          </Card>
+        </Pressable>
       </ScrollView>
 
       <SermonModal
