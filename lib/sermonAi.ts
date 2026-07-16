@@ -55,3 +55,18 @@ export async function generateMoodSermon(
     throw toAiError(error);
   }
 }
+
+/**
+ * Generate a short story illustrating a reflection. Quota-free follow-up —
+ * calls the `generateStory` Cloud Function.
+ */
+export async function generateStory(context: string): Promise<string> {
+  const callable = httpsCallable<{ context: string }, { story: string }>(functions, 'generateStory');
+  try {
+    const result = await callable({ context });
+    return result.data.story;
+  } catch (error: any) {
+    console.error('Error generating story:', error?.code, error?.message);
+    throw toAiError(error);
+  }
+}

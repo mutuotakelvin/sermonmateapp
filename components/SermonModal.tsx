@@ -19,6 +19,8 @@ import Card from '@/components/ui/Card';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { splitVerseString } from '@/lib/cards';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
+import { generateStory } from '@/lib/sermonAi';
+import { generatePrayer } from '@/lib/prayerAi';
 import { theme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
 
@@ -56,6 +58,10 @@ export default function SermonModal({
   const [title, setTitle] = useState(topic);
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].id);
   const [saving, setSaving] = useState(false);
+  const [story, setStory] = useState('');
+  const [prayer, setPrayer] = useState('');
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [prayerLoading, setPrayerLoading] = useState(false);
 
   const displaySermon = savedSermon
     ? { verses: savedSermon.verses, interpretation: savedSermon.interpretation, story: savedSermon.story }
@@ -74,6 +80,11 @@ export default function SermonModal({
       setTitle(topic);
       setSelectedColor(COLOR_OPTIONS[0].id);
     }
+    // Fresh generations no longer bundle a story; only saved reflections may carry one.
+    setStory(savedSermon?.story ?? '');
+    setPrayer('');
+    setStoryLoading(false);
+    setPrayerLoading(false);
   }, [visible, topic, savedSermon]);
 
   const handleCopy = async (text: string, section: string) => {
@@ -105,12 +116,38 @@ export default function SermonModal({
       '',
       displaySermon.verses.join('\n'),
       '',
-      displaySermon.story,
+      story,
     ].join('\n');
     try {
       await Share.share({ message: body });
     } catch {
       showError('Share failed', 'Could not open the share sheet');
+    }
+  };
+
+  const handleGenerateStory = async () => {
+    if (!displaySermon) return;
+    setStoryLoading(true);
+    try {
+      const result = await generateStory(displaySermon.interpretation);
+      setStory(result);
+    } catch (error: any) {
+      showError('Could not add a story', error?.message || 'Please try again.');
+    } finally {
+      setStoryLoading(false);
+    }
+  };
+
+  const handleGeneratePrayer = async () => {
+    if (!displaySermon) return;
+    setPrayerLoading(true);
+    try {
+      const result = await generatePrayer(displaySermon.interpretation);
+      setPrayer(result);
+    } catch (error: any) {
+      showError('Could not create a prayer', error?.message || 'Please try again.');
+    } finally {
+      setPrayerLoading(false);
     }
   };
 
@@ -127,7 +164,7 @@ export default function SermonModal({
           title: title.trim(),
           verses: displaySermon.verses,
           interpretation: displaySermon.interpretation,
-          story: displaySermon.story,
+          story: story,
           color: selectedColor,
         });
         showSuccess('Reflection updated', 'Your reflection has been updated');
@@ -136,7 +173,7 @@ export default function SermonModal({
           title: title.trim(),
           verses: displaySermon.verses || [],
           interpretation: displaySermon.interpretation || '',
-          story: displaySermon.story || '',
+          story: story,
           color: selectedColor,
           topic,
         });
@@ -211,14 +248,61 @@ export default function SermonModal({
                 </Card>
               ))}
 
-              {/* A STORY */}
-              <View style={styles.sectionHeadRow}>
-                <AppText variant="label">A Story</AppText>
-                <Pressable onPress={() => handleCopy(displaySermon.story || '', 'Story')} hitSlop={8}>
-                  <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+              {/* A STORY — on-demand, saved with the reflection */}
+              {story ? (
+                <>
+                  <View style={styles.sectionHeadRow}>
+                    <AppText variant="label">A Story</AppText>
+                    <Pressable onPress={() => handleCopy(story, 'Story')} hitSlop={8}>
+                      <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                    </Pressable>
+                  </View>
+                  <AppText variant="body" style={styles.messageBody}>{story}</AppText>
+                </>
+              ) : (
+                <Pressable
+                  style={styles.generateBtn}
+                  onPress={handleGenerateStory}
+                  disabled={storyLoading}
+                >
+                  {storyLoading ? (
+                    <ActivityIndicator color={theme.color.accent} />
+                  ) : (
+                    <>
+                      <Ionicons name="book-outline" size={18} color={theme.color.accent} />
+                      <AppText variant="label" style={styles.generateBtnText}>Add a story</AppText>
+                    </>
+                  )}
                 </Pressable>
-              </View>
-              <AppText variant="body" style={styles.messageBody}>{displaySermon.story}</AppText>
+              )}
+
+              {/* A PRAYER — on-demand, ephemeral (not saved) */}
+              {prayer ? (
+                <>
+                  <View style={styles.sectionHeadRow}>
+                    <AppText variant="label">A Prayer</AppText>
+                    <Pressable onPress={() => handleCopy(prayer, 'Prayer')} hitSlop={8}>
+                      <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                    </Pressable>
+                  </View>
+                  <AppText variant="body" style={styles.messageBody}>{prayer}</AppText>
+                </>
+              ) : (
+                <Pressable
+                  style={styles.generateBtn}
+                  onPress={handleGeneratePrayer}
+                  disabled={prayerLoading}
+                >
+                  {prayerLoading ? (
+                    <ActivityIndicator color={theme.color.accent} />
+                  ) : (
+                    <>
+                      <Ionicons name="heart-outline" size={18} color={theme.color.accent} />
+                      <AppText variant="label" style={styles.generateBtnText}>Pray about this</AppText>
+                    </>
+                  )}
+                </Pressable>
+              )}
 
               {/* Card color row (small) */}
               <AppText variant="label" style={styles.colorLabel}>Card color</AppText>
@@ -286,6 +370,13 @@ const styles = StyleSheet.create({
     marginTop: theme.space.xl, marginBottom: theme.space.sm,
   },
   messageBody: { lineHeight: 24 },
+  generateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: theme.space.sm, marginTop: theme.space.xl,
+    minHeight: 48, borderRadius: theme.radius.md,
+    borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface,
+  },
+  generateBtnText: { color: theme.color.accent },
   verseCard: { marginBottom: theme.space.md },
   colorLabel: { marginTop: theme.space.xl, marginBottom: theme.space.sm },
   colorRow: { flexDirection: 'row', gap: theme.space.md },
