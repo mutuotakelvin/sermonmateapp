@@ -3,13 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, Share, StyleSheet, Switch, View } from 'react-native';
+import { AppState, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useToast } from '@/components/ToastProvider';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
 import Screen from '@/components/ui/Screen';
-import { rescheduleDailyVerse } from '@/lib/notifications';
+import { openExactAlarmSettings, rescheduleDailyVerse } from '@/lib/notifications';
+import type { ReminderStatus } from '@/lib/notifications';
 import { theme } from '@/lib/theme';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource, formatVerseForShare } from '@/lib/verses';
@@ -27,7 +28,7 @@ export default function VerseScreen() {
   } = useVerseStore();
 
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [reminderStatus, setReminderStatus] = useState<ReminderStatus>('disabled');
 
   const today = useMemo(() => new Date(), []);
   const verse = useMemo(() => bundledVerseSource.getVerseForDate(today), [today]);
@@ -39,8 +40,21 @@ export default function VerseScreen() {
   // Keep the notification schedule in sync with settings while on this screen.
   useEffect(() => {
     rescheduleDailyVerse({ reminderEnabled, reminderHour, reminderMinute, translation })
-      .then((active) => setPermissionDenied(reminderEnabled && !active));
+      .then(setReminderStatus);
   }, [reminderEnabled, reminderHour, reminderMinute, translation]);
+
+  // Granting exact alarms happens in system Settings, which doesn't notify us. Re-check
+  // on foreground so the warning clears when the user comes back having granted it.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const { reminderEnabled: on, reminderHour: h, reminderMinute: m, translation: t } =
+        useVerseStore.getState();
+      rescheduleDailyVerse({ reminderEnabled: on, reminderHour: h, reminderMinute: m, translation: t })
+        .then(setReminderStatus);
+    });
+    return () => sub.remove();
+  }, []);
 
   const handleCreateCard = () => {
     router.push({
@@ -145,10 +159,29 @@ export default function VerseScreen() {
           </Pressable>
         )}
 
-        {permissionDenied && (
+        {reminderStatus === 'unavailable' && (
           <AppText variant="caption" style={styles.permissionNote}>
             Turn on notifications for SermonMate in your device Settings to get your daily verse.
           </AppText>
+        )}
+
+        {reminderStatus === 'inexact' && (
+          <View style={styles.warningBlock}>
+            <AppText variant="caption" style={styles.permissionNote}>
+              {`Reminders may arrive hours late. Allow exact alarms to get your verse at ${timeLabel}.`}
+            </AppText>
+            <Pressable
+              onPress={openExactAlarmSettings}
+              style={styles.warningButton}
+              accessibilityRole="button"
+              accessibilityLabel="Turn on exact alarms"
+            >
+              <AppText variant="label" style={styles.warningButtonText}>
+                Turn on exact alarms
+              </AppText>
+              <Ionicons name="arrow-forward" size={14} color={theme.color.accentText} />
+            </Pressable>
+          </View>
         )}
       </Card>
 
@@ -214,4 +247,13 @@ const styles = StyleSheet.create({
   settingLabel: { fontFamily: theme.font.sansSemibold, color: theme.color.text },
   timeValue: { color: theme.color.accent, fontFamily: theme.font.sansSemibold },
   permissionNote: { marginTop: theme.space.sm, color: theme.color.rust },
+  warningBlock: { alignItems: 'flex-start' },
+  warningButton: {
+    flexDirection: 'row', alignItems: 'center', gap: theme.space.xs,
+    marginTop: theme.space.sm, minHeight: 44,
+    paddingHorizontal: theme.space.md,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.color.accent,
+  },
+  warningButtonText: { color: theme.color.accentText },
 });

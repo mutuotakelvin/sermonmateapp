@@ -26,7 +26,15 @@ export default {
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
         "android.permission.WAKE_LOCK",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        // Without this, canScheduleExactAlarms() is false on Android 12+ and
+        // expo-notifications silently downgrades to setAndAllowWhileIdle, which
+        // Doze batches into a maintenance window — a 7:27 AM reminder arrived at
+        // 10:00 AM. Deliberately NOT USE_EXACT_ALARM: that one is auto-granted
+        // but Play restricts it to apps whose core function is an alarm clock or
+        // calendar, which we are not. This one is user-granted instead — denied
+        // by default at our target SDK, so the verse screen prompts for it.
+        "android.permission.SCHEDULE_EXACT_ALARM"
       ],
       // We only SAVE verse cards to the gallery (write-only), never read the
       // user's media, so strip the broad read-media permissions that
@@ -69,7 +77,10 @@ export default {
           isAccessMediaLocationEnabled: false
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      // Supplies canScheduleExactAlarms() + openSettings('alarms'); expo-notifications
+      // exposes no JS API for exact-alarm state.
+      "react-native-permissions"
     ],
     experiments: {
       typedRoutes: true
