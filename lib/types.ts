@@ -1,7 +1,7 @@
 export type Sermon = {
   verses: string[]
   interpretation: string
-  story: string
+  story?: string
 }
 
 export type SermonRequest = {
@@ -17,7 +17,7 @@ export type SavedSermon = {
   title: string
   verses: string[]
   interpretation: string
-  story: string
+  story?: string
   date: string
   color: string
   is_public?: boolean // Optional for future web use
