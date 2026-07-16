@@ -1,7 +1,7 @@
 import SermonModal from "@/components/SermonModal";
-import ConfirmationModal from "@/components/ConfirmationModal";
 import MoodModal from "@/components/MoodModal";
 import VerseOfDayCard from "@/components/VerseOfDayCard";
+import ReflectionCard from "@/components/ReflectionCard";
 import { useToast } from "@/components/ToastProvider";
 import Screen from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
@@ -10,13 +10,13 @@ import Chip from "@/components/ui/Chip";
 import { generateSermon, AiLimitError } from "@/lib/sermonAi";
 import { presentPaywall, syncEntitlement } from "@/lib/purchases";
 import { usePurchasesStore } from "@/lib/stores/purchases";
-import { getSermons, deleteSermon } from "@/lib/sermonApi";
+import { getSermons } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useMoodStore } from "@/lib/stores/mood";
 import { theme } from "@/lib/theme";
 import type { SavedSermon, Sermon } from "@/lib/types";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -26,17 +26,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
-// Muted tone map: color id → Card tone (matches theme.color keys)
-const COLOR_TONE_MAP: Record<string, keyof typeof theme.color> = {
-  '1': 'sage',
-  '2': 'sand',
-  '3': 'dustyBlue',
-  '4': 'olive',
-  '5': 'blush',
-  '6': 'rust',
-};
+// Most-recent reflections shown on home before the "View all" link appears.
+const HOME_REFLECTION_CAP = 6;
 
 // Muted mood dot colors from theme palette
 const MOOD_DOT_COLORS: Record<string, string> = {
@@ -69,19 +62,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [savedSermons, setSavedSermons] = useState<SavedSermon[]>([]);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [sermonToDelete, setSermonToDelete] = useState<SavedSermon | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [moodModalVisible, setMoodModalVisible] = useState(false);
 
   const chips = ["Hope", "Faith", "Healing", "Gratitude"];
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
   useEffect(() => {
-    loadSavedSermons();
     loadMoodEntries();
     getWeeklySummary();
   }, []);
+
+  // Reload reflections whenever home regains focus, so a delete performed on the
+  // full "View all" page is reflected when the user navigates back here.
+  useFocusEffect(
+    useCallback(() => {
+      loadSavedSermons();
+    }, [])
+  );
 
   const loadSavedSermons = async () => {
     try {
@@ -151,39 +148,6 @@ export default function Home() {
 
   const handleSave = () => {
     loadSavedSermons();
-  };
-
-  const handleDeletePress = (savedSermon: SavedSermon) => {
-    setSermonToDelete(savedSermon);
-    setDeleteModalVisible(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!sermonToDelete) return;
-
-    setDeleting(true);
-    try {
-      await deleteSermon(sermonToDelete.id);
-      showSuccess('Reflection removed', 'The reflection has been deleted');
-      setDeleteModalVisible(false);
-      setSermonToDelete(null);
-      loadSavedSermons();
-    } catch (error) {
-      console.error('Error deleting sermon:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete reflection';
-      showError('Delete failed', errorMessage);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteModalVisible(false);
-    setSermonToDelete(null);
-  };
-
-  const getSermonTone = (colorId: string): keyof typeof theme.color => {
-    return COLOR_TONE_MAP[colorId] ?? 'sage';
   };
 
   return (
@@ -305,9 +269,20 @@ export default function Home() {
           </Card>
         )}
 
-        {/* My Sermons */}
+        {/* My Reflections */}
         <View style={styles.sermonsSection}>
-          <AppText variant="title" style={styles.sectionTitle}>My Reflections</AppText>
+          <View style={styles.sermonsHeader}>
+            <AppText variant="title" style={styles.sectionTitle}>My Reflections</AppText>
+            {savedSermons.length > HOME_REFLECTION_CAP && (
+              <Pressable
+                onPress={() => router.push('/(protected)/reflections' as never)}
+                style={styles.viewAllButton}
+              >
+                <AppText style={styles.viewAllText}>View all</AppText>
+                <Ionicons name="chevron-forward" size={16} color={theme.color.accent} />
+              </Pressable>
+            )}
+          </View>
           {savedSermons.length === 0 ? (
             <View style={styles.emptyState}>
               <AppText variant="body" style={styles.emptyStateText}>No reflections yet</AppText>
@@ -316,38 +291,20 @@ export default function Home() {
               </AppText>
             </View>
           ) : (
-            <View style={styles.sermonsGrid}>
-              {savedSermons.map((savedSermon) => (
-                <Pressable
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.sermonsStrip}
+            >
+              {savedSermons.slice(0, HOME_REFLECTION_CAP).map((savedSermon) => (
+                <ReflectionCard
                   key={savedSermon.id}
-                  style={styles.sermonCardWrapper}
-                  onPress={() => handleSermonCardPress(savedSermon)}
-                >
-                  <Card tone={getSermonTone(savedSermon.color)} style={styles.sermonCard}>
-                    <View style={styles.deleteButtonContainer} pointerEvents="box-none">
-                      <Pressable
-                        style={styles.deleteButton}
-                        onPress={() => handleDeletePress(savedSermon)}
-                      >
-                        <Ionicons name="trash-outline" size={18} color={theme.color.text} style={{ opacity: 0.7 }} />
-                      </Pressable>
-                    </View>
-                    <AppText
-                      style={styles.sermonCardTitle}
-                      numberOfLines={2}
-                    >
-                      {savedSermon.title}
-                    </AppText>
-                    <AppText variant="body" style={styles.sermonCardDescription} numberOfLines={2}>
-                      {savedSermon.interpretation.slice(0, 100)}...
-                    </AppText>
-                    <View style={styles.sermonCardFooter}>
-                      <AppText variant="caption">{savedSermon.date}</AppText>
-                    </View>
-                  </Card>
-                </Pressable>
+                  sermon={savedSermon}
+                  variant="strip"
+                  onPress={handleSermonCardPress}
+                />
               ))}
-            </View>
+            </ScrollView>
           )}
         </View>
 
@@ -379,17 +336,6 @@ export default function Home() {
         onClose={handleModalClose}
         onSave={handleSave}
         loading={generating}
-      />
-      <ConfirmationModal
-        visible={deleteModalVisible}
-        title="Delete reflection?"
-        message="This reflection will be deleted permanently. This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        destructive={true}
-        loading={deleting}
       />
       <MoodModal
         visible={moodModalVisible}
@@ -548,8 +494,29 @@ const styles = StyleSheet.create({
   sermonsSection: {
     marginTop: theme.space.lg,
   },
-  sectionTitle: {
+  sermonsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: theme.space.md,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.xs,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontFamily: theme.font.sansMedium,
+    color: theme.color.accent,
+  },
+  sermonsStrip: {
+    flexDirection: 'row',
+    gap: theme.space.md,
+    paddingRight: theme.space.lg,
+  },
+  sectionTitle: {
+    // spacing handled by sermonsHeader row
   },
   emptyState: {
     paddingVertical: theme.space.xxl,
@@ -562,49 +529,6 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     textAlign: 'center',
     color: theme.color.textMuted,
-  },
-  sermonsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.space.md,
-  },
-  sermonCardWrapper: {
-    width: '48%',
-  },
-  sermonCard: {
-    minHeight: 160,
-    justifyContent: 'space-between',
-  },
-  deleteButtonContainer: {
-    position: 'absolute',
-    top: theme.space.md,
-    right: theme.space.md,
-    zIndex: 10,
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.radius.pill,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sermonCardTitle: {
-    fontFamily: theme.font.serif,
-    fontSize: 16,
-    lineHeight: 22,
-    color: theme.color.text,
-    marginBottom: theme.space.sm,
-    marginTop: theme.space.xs,
-  },
-  sermonCardDescription: {
-    color: theme.color.text,
-    opacity: 0.8,
-    flex: 1,
-  },
-  sermonCardFooter: {
-    marginTop: theme.space.md,
-    alignItems: 'flex-end',
   },
   wallpaperRow: {
     marginTop: theme.space.lg,
