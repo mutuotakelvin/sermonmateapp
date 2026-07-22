@@ -47,3 +47,7 @@ bun.lockb
 
 # Superpowers scratch (ledger, brainstorm mockups)
 .superpowers/
+
+# Local EAS build artifacts
+build-*.apk
+build-*.aab
