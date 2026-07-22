@@ -1,6 +1,15 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
+import { sanitizeAiText } from './sanitizeAiText';
 import type { Sermon, MoodType } from './types';
+
+/**
+ * Clean the generated prose. `verses` is left alone deliberately — it is quoted
+ * scripture, and its "John 3:16 - ..." separator must survive intact.
+ */
+function cleanSermon(sermon: Sermon): Sermon {
+  return { ...sermon, interpretation: sanitizeAiText(sermon.interpretation) };
+}
 
 export class AiLimitError extends Error {
   constructor(public kind: 'free' | 'pro') {
@@ -26,7 +35,7 @@ export async function generateSermon(topic: string): Promise<Sermon> {
   const callable = httpsCallable<{ topic: string }, Sermon>(functions, 'generateSermon');
   try {
     const result = await callable({ topic });
-    return result.data;
+    return cleanSermon(result.data);
   } catch (error: any) {
     console.error('Error generating sermon:', error?.code, error?.message);
     throw toAiError(error);
@@ -49,7 +58,7 @@ export async function generateMoodSermon(
   >(functions, 'generateMoodSermon');
   try {
     const result = await callable({ mood, reason, customReason });
-    return result.data;
+    return cleanSermon(result.data);
   } catch (error: any) {
     console.error('Error generating mood sermon:', error?.code, error?.message);
     throw toAiError(error);
@@ -64,7 +73,7 @@ export async function generateStory(context: string): Promise<string> {
   const callable = httpsCallable<{ context: string }, { story: string }>(functions, 'generateStory');
   try {
     const result = await callable({ context });
-    return result.data.story;
+    return sanitizeAiText(result.data.story);
   } catch (error: any) {
     console.error('Error generating story:', error?.code, error?.message);
     throw toAiError(error);
