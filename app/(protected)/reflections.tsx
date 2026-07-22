@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -9,11 +9,13 @@ import { useToast } from '@/components/ToastProvider';
 import Screen from '@/components/ui/Screen';
 import AppText from '@/components/ui/AppText';
 import { getSermons, deleteSermon } from '@/lib/sermonApi';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import type { SavedSermon } from '@/lib/types';
 
 export default function ReflectionsScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { showSuccess, showError } = useToast();
 
   const [sermons, setSermons] = useState<SavedSermon[]>([]);
@@ -129,7 +131,7 @@ export default function ReflectionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import AppText from '@/components/ui/AppText';
 
 export type ToastType = 'success' | 'warning' | 'info' | 'error';
@@ -20,6 +20,8 @@ interface ToastProps extends ToastConfig {
 }
 
 const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000, onDismiss }) => {
+  const theme = useTheme();
+  const toastStyles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const slideAnim = React.useRef(new Animated.Value(-200)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
@@ -109,7 +111,7 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000
       <View style={toastStyles.toast}>
         <View style={toastStyles.content}>
           <View style={[toastStyles.iconContainer, { backgroundColor: toastConfig.iconColor }]}>
-            <Ionicons name={toastConfig.icon} size={20} color={theme.color.accentText} />
+            <Ionicons name={toastConfig.icon} size={20} color={theme.color.onCharcoal} />
           </View>
           <View style={toastStyles.textContainer}>
             <AppText variant="title" style={toastStyles.title}>{title}</AppText>
@@ -124,7 +126,7 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 4000
   );
 };
 
-const toastStyles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   container: {
     position: 'absolute',
     left: theme.space.lg,
@@ -138,7 +140,9 @@ const toastStyles = StyleSheet.create({
     padding: theme.space.lg,
     borderRadius: theme.radius.md,
     backgroundColor: theme.color.surface,
-    shadowColor: theme.color.charcoal,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    shadowColor: theme.color.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

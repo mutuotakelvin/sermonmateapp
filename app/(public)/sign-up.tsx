@@ -1,14 +1,14 @@
 import { useToast } from '@/components/ToastProvider';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { useAuthStore } from '@/lib/stores/auth';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import AppText from '@/components/ui/AppText';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import Screen from '@/components/ui/Screen';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Link, router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -20,6 +20,8 @@ import {
 } from 'react-native';
 
 export default function RegisterScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -192,7 +194,7 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screenInner: {
     paddingHorizontal: 0,
   },
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.space.lg,
     ...Platform.select({
       ios: {
-        shadowColor: theme.color.charcoal,
+        shadowColor: theme.color.shadow,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,

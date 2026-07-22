@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from '@/components/ui/Card';
 import AppText from '@/components/ui/AppText';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import type { SavedSermon } from '@/lib/types';
 
 export type ReflectionCardVariant = 'strip' | 'grid';
@@ -17,7 +17,7 @@ interface ReflectionCardProps {
 
 // Reflection color id → Card tone (theme.color key). Owned here because this is
 // now the only place that maps a saved reflection's color to a visual tone.
-const COLOR_TONE_MAP: Record<string, keyof typeof theme.color> = {
+const COLOR_TONE_MAP: Record<string, keyof AppTheme['color']> = {
   '1': 'sage',
   '2': 'sand',
   '3': 'dustyBlue',
@@ -26,11 +26,13 @@ const COLOR_TONE_MAP: Record<string, keyof typeof theme.color> = {
   '6': 'rust',
 };
 
-function toneFor(colorId: string): keyof typeof theme.color {
+function toneFor(colorId: string): keyof AppTheme['color'] {
   return COLOR_TONE_MAP[colorId] ?? 'sage';
 }
 
 export default function ReflectionCard({ sermon, variant, onPress, onDelete }: ReflectionCardProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const showDelete = variant === 'grid' && !!onDelete;
 
   return (
@@ -60,7 +62,7 @@ export default function ReflectionCard({ sermon, variant, onPress, onDelete }: R
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   stripWrapper: { width: 160 },
   gridWrapper: { width: '48%' },
   card: { minHeight: 160, justifyContent: 'space-between' },
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: theme.radius.pill,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: theme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import BootSplash from '@/components/ui/BootSplash';
 import { useAuthStore } from '@/lib/stores/auth';
 
 export default function Index() {
@@ -19,11 +19,7 @@ export default function Index() {
   }, []);
 
   if (isCheckingAuth) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
+    return <BootSplash />;
   }
 
   // If authenticated, go to protected routes, otherwise check onboarding

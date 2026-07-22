@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import AppText from '@/components/ui/AppText';
 
 interface ConfirmationModalProps {
@@ -27,6 +27,8 @@ export default function ConfirmationModal({
   destructive = true,
   loading = false,
 }: ConfirmationModalProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Modal
       visible={visible}
@@ -81,7 +83,7 @@ export default function ConfirmationModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -89,14 +91,16 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.color.overlay,
   },
   modalContent: {
     backgroundColor: theme.color.surface,
     borderRadius: theme.radius.lg,
     width: '85%',
     maxWidth: 400,
-    shadowColor: theme.color.charcoal,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    shadowColor: theme.color.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,

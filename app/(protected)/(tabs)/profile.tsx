@@ -1,29 +1,47 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
-  Alert,
-  ScrollView,
   Linking,
+  Pressable,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/stores/auth';
 import Constants from 'expo-constants';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
+import { useAppearanceStore, type ThemeMode } from '@/lib/stores/appearance';
 import Screen from '@/components/ui/Screen';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { useToast } from '@/components/ToastProvider';
 import { presentPaywall, presentCustomerCenter, syncEntitlement } from '@/lib/purchases';
 import { usePurchasesStore } from '@/lib/stores/purchases';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const APPEARANCE_OPTIONS: { mode: ThemeMode; label: string; icon: IoniconName }[] = [
+  { mode: 'system', label: 'System', icon: 'phone-portrait-outline' },
+  { mode: 'light', label: 'Light', icon: 'sunny-outline' },
+  { mode: 'dark', label: 'Dark', icon: 'moon-outline' },
+];
+
 export default function Profile() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { user, logout } = useAuthStore();
   const isPro = usePurchasesStore((s) => s.isPro);
   const refreshPro = usePurchasesStore((s) => s.refresh);
+  const appearanceMode = useAppearanceStore((s) => s.mode);
+  const setAppearanceMode = useAppearanceStore((s) => s.setMode);
   const { showInfo } = useToast();
+
+  const [signOutVisible, setSignOutVisible] = useState(false);
+  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const handleUpgrade = async () => {
     const bought = await presentPaywall();
@@ -66,22 +84,15 @@ export default function Profile() {
     return colorOptions[index];
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/login');
-          },
-        },
-      ]
-    );
+  const handleConfirmSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      setSignOutVisible(false);
+      router.replace('/login');
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   const handleTermsPress = () => {
@@ -96,21 +107,9 @@ export default function Profile() {
     Linking.openURL('mailto:info@bobakdevs.com?subject=Report Issue');
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'To request account deletion, please email info@bobakdevs.com. We will process your request and delete all associated data.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Open Email',
-          style: 'destructive',
-          onPress: () => {
-            Linking.openURL('mailto:info@bobakdevs.com?subject=Account Deletion Request');
-          },
-        },
-      ]
-    );
+  const handleConfirmDelete = () => {
+    setDeleteVisible(false);
+    Linking.openURL('mailto:info@bobakdevs.com?subject=Account Deletion Request');
   };
 
   return (
@@ -145,25 +144,63 @@ export default function Profile() {
           )}
         </Card>
 
+        {/* Appearance */}
+        <View style={styles.section}>
+          <AppText variant="label" style={styles.sectionLabel}>Appearance</AppText>
+          <Card style={styles.appearanceCard}>
+            <View style={styles.segment}>
+              {APPEARANCE_OPTIONS.map((option) => {
+                const active = appearanceMode === option.mode;
+                return (
+                  <Pressable
+                    key={option.mode}
+                    onPress={() => setAppearanceMode(option.mode)}
+                    style={[styles.segmentItem, active && styles.segmentItemActive]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Ionicons
+                      name={option.icon}
+                      size={18}
+                      color={active ? theme.color.accentText : theme.color.textMuted}
+                    />
+                    <AppText style={[styles.segmentText, active && styles.segmentTextActive]}>
+                      {option.label}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <AppText variant="caption" style={styles.appearanceHint}>
+              {appearanceMode === 'system'
+                ? 'Following your device setting.'
+                : `Always ${appearanceMode}, whatever your device is set to.`}
+            </AppText>
+          </Card>
+        </View>
+
         {/* Account Actions */}
-        <Card style={styles.actionsCard}>
-          <TouchableOpacity style={styles.actionRow} onPress={handleReportIssuePress} activeOpacity={0.7}>
-            <Ionicons name="flag-outline" size={20} color={theme.color.text} />
-            <AppText variant="body" style={styles.actionText}>Report Issue</AppText>
-            <Ionicons name="chevron-forward" size={16} color={theme.color.textMuted} />
-          </TouchableOpacity>
+        <View style={styles.section}>
+          <AppText variant="label" style={styles.sectionLabel}>Account</AppText>
+          <Card style={styles.actionsCard}>
+            <TouchableOpacity style={styles.actionRow} onPress={handleReportIssuePress} activeOpacity={0.7}>
+              <Ionicons name="flag-outline" size={20} color={theme.color.text} />
+              <AppText variant="body" style={styles.actionText}>Report Issue</AppText>
+              <Ionicons name="chevron-forward" size={16} color={theme.color.textMuted} />
+            </TouchableOpacity>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.actionRow} onPress={handleDeleteAccount} activeOpacity={0.7}>
-            <Ionicons name="trash-outline" size={20} color={theme.color.danger} />
-            <AppText variant="body" style={styles.deleteText}>Delete Account</AppText>
-            <Ionicons name="chevron-forward" size={16} color={theme.color.danger} />
-          </TouchableOpacity>
-        </Card>
+            <TouchableOpacity style={styles.actionRow} onPress={() => setDeleteVisible(true)} activeOpacity={0.7}>
+              <Ionicons name="trash-outline" size={20} color={theme.color.danger} />
+              <AppText variant="body" style={styles.deleteText}>Delete Account</AppText>
+              <Ionicons name="chevron-forward" size={16} color={theme.color.danger} />
+            </TouchableOpacity>
+          </Card>
+        </View>
 
         {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleLogout} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.signOutButton} onPress={() => setSignOutVisible(true)} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={20} color={theme.color.accentText} />
           <AppText style={styles.signOutText}>Sign Out</AppText>
         </TouchableOpacity>
@@ -185,11 +222,33 @@ export default function Profile() {
         </AppText>
         <AppText variant="caption" style={styles.versionText}>Powered by bobakdevs</AppText>
       </ScrollView>
+
+      <ConfirmationModal
+        visible={signOutVisible}
+        title="Sign out?"
+        message="You'll need to sign in again to reach your reflections and mood history."
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        onConfirm={handleConfirmSignOut}
+        onCancel={() => setSignOutVisible(false)}
+        destructive
+        loading={signingOut}
+      />
+      <ConfirmationModal
+        visible={deleteVisible}
+        title="Delete account?"
+        message="To request account deletion, email info@bobakdevs.com. We'll process your request and delete all associated data."
+        confirmText="Open Email"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteVisible(false)}
+        destructive
+      />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   scrollContent: {
     paddingTop: theme.space.xl,
     paddingBottom: 40,
@@ -219,10 +278,49 @@ const styles = StyleSheet.create({
   email: {
     textAlign: 'center',
   },
+  section: {
+    gap: theme.space.sm,
+  },
+  sectionLabel: {
+    paddingHorizontal: theme.space.xs,
+  },
   actionsCard: {
     paddingVertical: 0,
     paddingHorizontal: 0,
     overflow: 'hidden',
+  },
+  appearanceCard: {
+    gap: theme.space.md,
+  },
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: theme.color.surfaceAlt,
+    borderRadius: theme.radius.pill,
+    padding: 4,
+    gap: 4,
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.space.xs,
+    minHeight: 40,
+    borderRadius: theme.radius.pill,
+  },
+  segmentItemActive: {
+    backgroundColor: theme.color.accent,
+  },
+  segmentText: {
+    fontFamily: theme.font.sansMedium,
+    fontSize: 14,
+    color: theme.color.textMuted,
+  },
+  segmentTextActive: {
+    color: theme.color.accentText,
+  },
+  appearanceHint: {
+    color: theme.color.textMuted,
   },
   actionRow: {
     flexDirection: 'row',

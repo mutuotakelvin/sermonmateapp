@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Screen from '@/components/ui/Screen';
 import AppText from '@/components/ui/AppText';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import { WALLPAPERS, WALLPAPER_CATEGORIES, type WallpaperCategory } from '@/lib/wallpapers';
 
 export default function WallpapersScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [category, setCategory] = useState<'All' | WallpaperCategory>('All');
 
   const shown = category === 'All' ? WALLPAPERS : WALLPAPERS.filter((w) => w.category === category);
@@ -54,7 +56,7 @@ export default function WallpapersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screen: { paddingHorizontal: theme.space.lg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: theme.space.sm },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

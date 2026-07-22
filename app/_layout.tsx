@@ -4,6 +4,8 @@ import { WorkSans_400Regular, WorkSans_500Medium, WorkSans_600SemiBold, useFonts
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { ToastProvider } from '@/components/ToastProvider';
@@ -12,6 +14,8 @@ import { configurePurchases, identifyPurchaser, logoutPurchaser, addProListener,
 import { useVerseStore } from '@/lib/stores/verse';
 import { usePurchasesStore } from '@/lib/stores/purchases';
 import { useAuthStore } from '@/lib/stores/auth';
+import { useAppearanceStore } from '@/lib/stores/appearance';
+import { useTheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
@@ -31,6 +35,19 @@ export default function RootLayout() {
   const handledResponseId = useRef<string | null>(null);
   const authUserId = useAuthStore((s) => s.user?.id);
   const setPro = usePurchasesStore((s) => s.setPro);
+  const initializeAppearance = useAppearanceStore((s) => s.initializeAppearance);
+  const theme = useTheme();
+
+  // Restore the saved light/dark preference before the first paint we can control.
+  useEffect(() => {
+    initializeAppearance();
+  }, [initializeAppearance]);
+
+  // Keep the window background in step so overscroll and transitions don't flash
+  // the wrong scheme.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(theme.color.paper).catch(() => {});
+  }, [theme]);
 
   // Keep the Pro flag live from RevenueCat's SDK.
   useEffect(() => {
@@ -118,7 +135,8 @@ export default function RootLayout() {
 
   return (
     <ToastProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+      <StatusBar style={theme.isDark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.paper } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(public)" options={{ headerShown: false }} />
         <Stack.Screen name="(protected)" options={{ headerShown: false }} />

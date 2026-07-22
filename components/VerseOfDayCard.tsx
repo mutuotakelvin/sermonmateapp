@@ -4,12 +4,14 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource } from '@/lib/verses';
 
 export default function VerseOfDayCard() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { translation } = useVerseStore();
 
   const verse = useMemo(() => bundledVerseSource.getVerseForDate(new Date()), []);
@@ -32,10 +34,10 @@ export default function VerseOfDayCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   pressable: { marginHorizontal: theme.space.lg, marginTop: theme.space.md },
   card: {
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8,
+    shadowColor: theme.color.shadow, shadowOpacity: 0.08, shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
   snippet: {

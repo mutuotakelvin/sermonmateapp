@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -24,7 +23,8 @@ import { getReasonsForMood } from '@/lib/moodReasons';
 import SermonModal from './SermonModal';
 import AppText from '@/components/ui/AppText';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { theme } from '@/lib/theme';
+import Loader from '@/components/ui/Loader';
+import { useTheme, type AppTheme } from '@/lib/theme';
 
 interface MoodModalProps {
   visible: boolean;
@@ -59,6 +59,8 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
   onPress,
   visible,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -111,6 +113,8 @@ const AnimatedMoodChip: React.FC<AnimatedMoodChipProps> = ({
 };
 
 export default function MoodModal({ visible, onClose, onComplete }: MoodModalProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { showSuccess, showError } = useToast();
   const { addMoodEntry } = useMoodStore();
 
@@ -425,13 +429,14 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
                 {/* Step 3: Loading */}
                 {step === 3 && loading && (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.color.accent} />
-                    <AppText
-                      variant="body"
-                      style={{ marginTop: theme.space.lg, textAlign: 'center', color: theme.color.textMuted }}
-                    >
-                      Creating personalized encouragement for you...
-                    </AppText>
+                    <Loader
+                      icon="heart-outline"
+                      messages={[
+                        'Listening to how you feel…',
+                        'Looking for a word of comfort…',
+                        'Bringing your heart to Scripture…',
+                      ]}
+                    />
                   </View>
                 )}
               </ScrollView>
@@ -465,14 +470,14 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: theme.color.overlay,
   },
   modalContent: {
     backgroundColor: theme.color.paper,
@@ -480,7 +485,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: theme.radius.lg,
     maxHeight: '90%',
     flex: 1,
-    shadowColor: theme.color.charcoal,
+    shadowColor: theme.color.shadow,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,

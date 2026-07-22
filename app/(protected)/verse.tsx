@@ -10,7 +10,7 @@ import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
 import Screen from '@/components/ui/Screen';
 import { rescheduleDailyVerse } from '@/lib/notifications';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource, formatVerseForShare } from '@/lib/verses';
 import type { Translation } from '@/lib/verseData';
@@ -19,6 +19,8 @@ const TRANSLATIONS: Translation[] = ['WEB', 'KJV'];
 
 export default function VerseScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { showSuccess, showError } = useToast();
   const reducedMotion = useReducedMotion();
   const {
@@ -94,10 +96,10 @@ export default function VerseScreen() {
 
           <View style={styles.actionsRow}>
             <Pressable onPress={handleShare} style={styles.actionButton} hitSlop={4}>
-              <Ionicons name="share-outline" size={22} color={theme.color.paper} />
+              <Ionicons name="share-outline" size={22} color={theme.color.onCharcoal} />
             </Pressable>
             <Pressable onPress={handleCopy} style={styles.actionButton} hitSlop={4}>
-              <Ionicons name="copy-outline" size={22} color={theme.color.paper} />
+              <Ionicons name="copy-outline" size={22} color={theme.color.onCharcoal} />
             </Pressable>
             <Pressable onPress={handleCreateCard} style={styles.actionButton} hitSlop={4}>
               <Ionicons name="image-outline" size={22} color={theme.color.text} />
@@ -168,16 +170,16 @@ export default function VerseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, paddingVertical: theme.space.md },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   heroCard: {
     marginTop: theme.space.sm,
-    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12,
+    shadowColor: theme.color.shadow, shadowOpacity: 0.18, shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }, elevation: 4,
   },
   verseText: {
-    color: theme.color.paper,
+    color: theme.color.onCharcoal,
     textAlign: 'center',
     fontSize: 22,
     lineHeight: 34,
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
   verseReference: {
     marginTop: theme.space.lg,
     textAlign: 'center',
-    color: `${theme.color.paper}e6`,
+    color: `${theme.color.onCharcoal}e6`,
   },
   actionsRow: { flexDirection: 'row', justifyContent: 'center', gap: theme.space.md, marginTop: theme.space.xl },
   actionButton: {
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
   },
   segmentItemActive: { backgroundColor: theme.color.charcoal },
   segmentText: { color: theme.color.textMuted },
-  segmentTextActive: { color: theme.color.paper },
+  segmentTextActive: { color: theme.color.onCharcoal },
   settingsCard: { marginTop: theme.space.xl, gap: theme.space.xs },
   settingRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
