@@ -12,6 +12,7 @@ import Screen from '@/components/ui/Screen';
 import { openExactAlarmSettings, rescheduleDailyVerse } from '@/lib/notifications';
 import type { ReminderStatus } from '@/lib/notifications';
 import { useTheme, type AppTheme } from '@/lib/theme';
+import { timeOfDay } from '@/lib/time';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource, formatVerseForShare } from '@/lib/verses';
 import type { Translation } from '@/lib/verseData';
@@ -82,7 +83,7 @@ export default function VerseScreen() {
     }
   };
 
-  const timeLabel = new Date(0, 0, 0, reminderHour, reminderMinute)
+  const timeLabel = timeOfDay(reminderHour, reminderMinute)
     .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
   return (
@@ -189,7 +190,7 @@ export default function VerseScreen() {
 
       {showTimePicker && (
         <DateTimePicker
-          value={new Date(0, 0, 0, reminderHour, reminderMinute)}
+          value={timeOfDay(reminderHour, reminderMinute)}
           mode="time"
           onChange={(event, selected) => {
             setShowTimePicker(false);

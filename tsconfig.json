@@ -2,6 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Node's --experimental-strip-types resolves ESM imports literally, so *.test.ts
+    // must import "./time.ts" with the extension. Expo's base sets noEmit, so this is
+    // type-checking only and never reaches the bundler.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": [
         "./*"
