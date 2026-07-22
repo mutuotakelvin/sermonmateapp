@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "SermonMate",
     slug: "sermonmate",
-    version: "1.2.0",
+    version: "1.3.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "sermonmate",
@@ -21,7 +21,7 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.sermonmate.app",
-      versionCode: 16,
+      versionCode: 17,
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
@@ -49,9 +49,12 @@ export default {
           image: "./assets/images/splash-icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          // Match theme.color.paper in each scheme so the splash hands off to
+          // the app without a flash. The splash icon is a self-contained tile,
+          // so it reads on both.
+          backgroundColor: "#F2EDE4",
           dark: {
-            backgroundColor: "#000000"
+            backgroundColor: "#141110"
           }
         }
       ],
