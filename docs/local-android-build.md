@@ -168,6 +168,24 @@ adb install -r build-*.apk     # adb comes from the android-tools package you al
 4. **Set a reminder ~5 min out.** If the verse screen warns about exact alarms, grant it and
    confirm the warning clears.
 
+Added after the first round of device testing (2026-07-22) — each of these was invisible to
+static checks, and two of them only misbehave on the device, never under Node:
+
+5. **Reminder time round-trip.** Set it to a specific minute, back out, reopen. It must show
+   the minute you picked, and must not creep backwards when you open and confirm the picker
+   repeatedly. (It used to record 6:09 PM for 6:10 PM — pre-1900 Local Mean Time offsets,
+   which only misbehave under Hermes. Fixed 0cbc65e.)
+6. **Translation toggle in DARK mode.** WEB/KJV — the selected side must be obviously filled,
+   not just differently coloured text. This one was invisible in dark and fine in light, so
+   check both schemes. Fixed b1b72cc.
+7. **Bottom of the home scroll.** Content should run right up to the tab bar with no dead band
+   of background between them. Fixed 6b0a95d.
+8. **Generated prose has no em dashes.** Generate a reflection, a story and a prayer. Look for
+   `—`, stray `**bold**`, and smart quotes. Fixed 54be55a.
+9. **Google sign-in.** Needs an ANDROID app registered in Firebase with this build's signing
+   SHA-1 — see the launch-config notes. Fingerprints are per-certificate, so a Play-installed
+   build needs the Play App Signing SHA-1 registered too, separately from the upload key.
+
 ## 8. Production build + upload
 
 ```bash
