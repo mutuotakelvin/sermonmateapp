@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, PressableProps, StyleSheet, Text } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 
 export default function Button({ children, ...props }: PressableProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [isPressed, setIsPressed] = useState(false);
   return (
     <Pressable
@@ -16,7 +18,7 @@ export default function Button({ children, ...props }: PressableProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   button: {
     backgroundColor: theme.color.accent,
     alignItems: 'center',

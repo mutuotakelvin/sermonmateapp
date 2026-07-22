@@ -7,9 +7,10 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import Screen from '@/components/ui/Screen';
 import { useToast } from '@/components/ToastProvider';
 import ShareCard from '@/components/ShareCard';
+import ReflectionPickerModal from '@/components/ReflectionPickerModal';
 import { CARD_THEMES, type CardContent, type CardPosition, type CardThemeKey } from '@/lib/cards';
 import { captureCardToFile, saveCardImage, shareCardImage } from '@/lib/cardCapture';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import { bundledVerseSource } from '@/lib/verses';
 import { useVerseStore } from '@/lib/stores/verse';
 
@@ -18,22 +19,46 @@ const POSITIONS: { key: CardPosition; label: string }[] = [
   { key: 'bottom', label: 'Bottom' },
 ];
 
+type Source = 'verse' | 'reflection';
+
 export default function CardScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const params = useLocalSearchParams<{ text?: string; reference?: string }>();
   const { translation } = useVerseStore();
   const { showSuccess, showError, showInfo } = useToast();
 
-  const content: CardContent = useMemo(() => {
-    if (params.text) return { text: params.text, reference: params.reference || undefined };
+  const todayVerse: CardContent = useMemo(() => {
     const v = bundledVerseSource.getVerseForDate(new Date());
     return { text: v.text[translation], reference: v.reference };
-  }, [params.text, params.reference, translation]);
+  }, [translation]);
 
+  // A card opened from a reflection or the verse screen arrives with its text
+  // already chosen; otherwise it starts on today's verse and the user can swap.
+  const initialContent: CardContent = useMemo(
+    () => (params.text ? { text: params.text, reference: params.reference || undefined } : todayVerse),
+    [params.text, params.reference, todayVerse]
+  );
+
+  const [source, setSource] = useState<Source>(params.text ? 'reflection' : 'verse');
+  const [content, setContent] = useState<CardContent>(initialContent);
   const [themeKey, setThemeKey] = useState<CardThemeKey>('cream');
   const [position, setPosition] = useState<CardPosition>('centered');
   const [busy, setBusy] = useState<'share' | 'save' | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
   const cardRef = useRef<View>(null);
+
+  const chooseVerseSource = () => {
+    setSource('verse');
+    setContent(todayVerse);
+  };
+
+  const handleReflectionSelected = (picked: CardContent) => {
+    setContent(picked);
+    setSource('reflection');
+    setPickerVisible(false);
+  };
 
   const onShare = async () => {
     setBusy('share');
@@ -76,6 +101,22 @@ export default function CardScreen() {
         <View style={styles.preview}>
           <ShareCard ref={cardRef} content={content} themeKey={themeKey} position={position} />
         </View>
+
+        <AppText variant="label" style={styles.sectionLabel}>Text</AppText>
+        <View style={styles.segment}>
+          <Pressable onPress={chooseVerseSource} style={[styles.segmentItem, source === 'verse' && styles.segmentItemActive]}>
+            <AppText style={[styles.segmentText, source === 'verse' && styles.segmentTextActive]}>Verse of the Day</AppText>
+          </Pressable>
+          <Pressable onPress={() => setPickerVisible(true)} style={[styles.segmentItem, source === 'reflection' && styles.segmentItemActive]}>
+            <AppText style={[styles.segmentText, source === 'reflection' && styles.segmentTextActive]}>My Reflections</AppText>
+          </Pressable>
+        </View>
+        {source === 'reflection' && (
+          <Pressable onPress={() => setPickerVisible(true)} style={styles.changeLink} hitSlop={8}>
+            <Ionicons name="swap-horizontal-outline" size={16} color={theme.color.accent} />
+            <AppText style={styles.changeLinkText}>Choose a different verse, message or prayer</AppText>
+          </Pressable>
+        )}
 
         <AppText variant="label" style={styles.sectionLabel}>Theme</AppText>
         <View style={styles.themeRow}>
@@ -120,11 +161,17 @@ export default function CardScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <ReflectionPickerModal
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={handleReflectionSelected}
+      />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screen: { paddingHorizontal: theme.space.lg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: theme.space.sm },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
@@ -138,6 +185,8 @@ const styles = StyleSheet.create({
   segmentItemActive: { backgroundColor: theme.color.surface },
   segmentText: { color: theme.color.textMuted },
   segmentTextActive: { color: theme.color.text },
+  changeLink: { flexDirection: 'row', alignItems: 'center', gap: theme.space.xs, marginTop: -theme.space.sm },
+  changeLinkText: { color: theme.color.accent, fontFamily: theme.font.sansMedium, fontSize: 13 },
   actions: { gap: theme.space.md, marginTop: theme.space.sm },
   shareBtn: { width: '100%' },
   saveBtn: { flexDirection: 'row', gap: theme.space.sm, alignItems: 'center', justifyContent: 'center', height: 48, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.color.accent },

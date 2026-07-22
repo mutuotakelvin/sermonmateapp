@@ -19,6 +19,7 @@ interface SermonDoc {
   verses: string[];
   interpretation: string;
   story: string;
+  prayer: string;
   color: string;
   topic?: string;
   isPublic: boolean;
@@ -51,6 +52,7 @@ function mapDocToSavedSermon(id: string, data: SermonDoc): SavedSermon {
     verses: data.verses || [],
     interpretation: data.interpretation || '',
     story: data.story || '',
+    prayer: data.prayer || '',
     date: formatDate(created),
     color: data.color || '1',
     is_public: data.isPublic || false,
@@ -82,6 +84,7 @@ export async function saveSermon(
       verses: sermon.verses || [],
       interpretation: sermon.interpretation || '',
       story: sermon.story || '',
+      prayer: sermon.prayer || '',
       color: sermon.color || '1',
       isPublic: false,
       ...(sermon.topic && { topic: sermon.topic }),
@@ -97,6 +100,7 @@ export async function saveSermon(
       verses: payload.verses,
       interpretation: payload.interpretation,
       story: payload.story,
+      prayer: payload.prayer,
       date: formatDate(new Date()),
       color: payload.color,
       is_public: false,
@@ -121,7 +125,8 @@ export async function updateSermon(sermon: SavedSermon): Promise<SavedSermon> {
       title: sermon.title,
       verses: sermon.verses,
       interpretation: sermon.interpretation,
-      story: sermon.story,
+      story: sermon.story ?? '',
+      prayer: sermon.prayer ?? '',
       color: sermon.color,
       updatedAt: serverTimestamp(),
     });
