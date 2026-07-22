@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import AppText from '@/components/ui/AppText';
@@ -58,6 +59,7 @@ export default function Loader({
         {Array.from({ length: RIPPLE_COUNT }).map((_, i) => (
           <Ripple
             key={i}
+            index={i}
             delay={(RIPPLE_DURATION / RIPPLE_COUNT) * i}
             size={size}
             color={theme.color.accent}
@@ -75,20 +77,30 @@ export default function Loader({
 }
 
 function Ripple({
-  delay, size, color, enabled,
-}: { delay: number; size: number; color: string; enabled: boolean }) {
-  const progress = useSharedValue(0);
+  index, delay, size, color, enabled,
+}: { index: number; delay: number; size: number; color: string; enabled: boolean }) {
+  // Starts fully expanded, i.e. invisible, so a ring waiting out its stagger
+  // delay doesn't sit stacked on the others.
+  const progress = useSharedValue(1);
 
   useEffect(() => {
     if (!enabled) {
-      progress.value = 0.35;
+      // Reduced motion: hold three still, concentric rings instead of animating.
+      progress.value = 0.15 + index * 0.28;
       return;
     }
     progress.value = withDelay(
       delay,
-      withRepeat(withTiming(1, { duration: RIPPLE_DURATION, easing: Easing.out(Easing.ease) }), -1, false)
+      withRepeat(
+        withSequence(
+          withTiming(0, { duration: 0 }),
+          withTiming(1, { duration: RIPPLE_DURATION, easing: Easing.out(Easing.ease) })
+        ),
+        -1,
+        false
+      )
     );
-  }, [delay, enabled, progress]);
+  }, [delay, enabled, index, progress]);
 
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: 0.42 + progress.value * 0.58 }],
