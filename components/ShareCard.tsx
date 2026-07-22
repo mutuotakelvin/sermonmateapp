@@ -29,11 +29,22 @@ const ShareCard = React.forwardRef<View, Props>(({ content, themeKey, position, 
   const alignItems = position === 'bottom' ? 'flex-start' : 'center';
   const textAlign = position === 'bottom' ? 'left' : 'center';
 
+  // Cards can now carry a whole message, story or prayer — not just a verse — so
+  // step the type down as the passage gets longer instead of overflowing the card.
+  const fontSize = fontSizeFor(content.text.length);
+
   return (
     <View ref={ref} collapsable={false} style={[styles.card, { width: w, height: h }, fullBleed && styles.fullBleed]}>
       <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={[styles.body, { justifyContent, alignItems, paddingBottom: position === 'bottom' ? h * 0.14 : 0 }]}>
-        <AppText variant="verse" style={[styles.verse, { color: verseColor, textAlign }, font === 'sans' && styles.verseSans]}>
+        <AppText
+          variant="verse"
+          style={[
+            styles.verse,
+            { color: verseColor, textAlign, fontSize, lineHeight: Math.round(fontSize * 1.45) },
+            font === 'sans' && styles.verseSans,
+          ]}
+        >
           {content.text}
         </AppText>
         {!!content.reference && (
@@ -49,6 +60,15 @@ const ShareCard = React.forwardRef<View, Props>(({ content, themeKey, position, 
 
 ShareCard.displayName = 'ShareCard';
 export default ShareCard;
+
+function fontSizeFor(length: number): number {
+  if (length > 900) return 12;
+  if (length > 650) return 14;
+  if (length > 450) return 16;
+  if (length > 300) return 18;
+  if (length > 170) return 20;
+  return 22;
+}
 
 const styles = StyleSheet.create({
   card: { borderRadius: 20, overflow: 'hidden', position: 'relative' },

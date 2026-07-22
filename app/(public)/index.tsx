@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import BootSplash from '@/components/ui/BootSplash';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,11 +25,7 @@ export default function Index() {
   };
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
+    return <BootSplash />;
   }
 
   if (hasCompletedOnboarding) {

@@ -3,8 +3,8 @@ import { functions } from './firebase';
 
 /**
  * Generate a short prayer responding to a reflection. Quota-free follow-up —
- * calls the `generatePrayer` Cloud Function. The generated prayer is ephemeral
- * (not persisted anywhere).
+ * calls the `generatePrayer` Cloud Function. The caller persists the result
+ * alongside the reflection (see `SermonModal`).
  */
 export async function generatePrayer(context: string): Promise<string> {
   const callable = httpsCallable<{ context: string }, { prayer: string }>(functions, 'generatePrayer');

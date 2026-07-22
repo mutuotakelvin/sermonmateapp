@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -17,7 +17,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import AppText from '@/components/ui/AppText';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 
@@ -37,6 +37,8 @@ const AnimatedIllustration: React.FC<{
   index: number;
   currentPage: number;
 }> = ({ icon, iconColor, index, currentPage }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const rotate = useSharedValue(0);
@@ -95,6 +97,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   index,
   currentPage,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
   const descOpacity = useSharedValue(0);
@@ -145,6 +149,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 };
 
 export default function Onboarding() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [currentPage, setCurrentPage] = useState(0);
   const pagerRef = React.useRef<PagerView>(null);
 
@@ -267,6 +273,8 @@ const PaginationDot: React.FC<{ index: number; currentPage: number }> = ({
 }) => {
   const scale = useSharedValue(index === currentPage ? 1.2 : 1);
   const opacity = useSharedValue(index === currentPage ? 1 : 0.4);
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const width = useSharedValue(index === currentPage ? 24 : 8);
 
   useEffect(() => {
@@ -292,7 +300,7 @@ const PaginationDot: React.FC<{ index: number; currentPage: number }> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.color.paper,

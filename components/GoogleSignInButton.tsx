@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from '@/components/ui/AppText';
 import { useToast } from '@/components/ToastProvider';
 import { useAuthStore } from '@/lib/stores/auth';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 
 export default function GoogleSignInButton() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [loading, setLoading] = useState(false);
   const { showError } = useToast();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
@@ -49,7 +51,7 @@ export default function GoogleSignInButton() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   wrap: { marginTop: theme.space.lg, gap: theme.space.lg },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.md },
   line: { flex: 1, height: 1, backgroundColor: theme.color.border },

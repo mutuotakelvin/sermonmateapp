@@ -9,16 +9,18 @@ import ShareCard from '@/components/ShareCard';
 import ReflectionPickerModal from '@/components/ReflectionPickerModal';
 import { useToast } from '@/components/ToastProvider';
 import { WALLPAPERS, TEXT_COLORS, type WallpaperFont } from '@/lib/wallpapers';
-import { splitVerseString, type CardContent } from '@/lib/cards';
+import { type CardContent } from '@/lib/cards';
 import { captureCardToFile, saveCardImage, shareCardImage } from '@/lib/cardCapture';
 import { bundledVerseSource } from '@/lib/verses';
 import { useVerseStore } from '@/lib/stores/verse';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 
 type Source = 'verse' | 'reflection';
 
 export default function WallpaperEditorScreen() {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const params = useLocalSearchParams<{ wallpaper?: string }>();
   const { translation } = useVerseStore();
   const { showSuccess, showError, showInfo } = useToast();
@@ -46,8 +48,8 @@ export default function WallpaperEditorScreen() {
     setContent(todayVerse);
   };
 
-  const handleReflectionSelected = (verse: string) => {
-    setContent(splitVerseString(verse));
+  const handleReflectionSelected = (picked: CardContent) => {
+    setContent(picked);
     setSource('reflection');
     setPickerVisible(false);
   };
@@ -112,6 +114,12 @@ export default function WallpaperEditorScreen() {
             <AppText style={[styles.segmentText, source === 'reflection' && styles.segmentTextActive]}>My Reflections</AppText>
           </Pressable>
         </View>
+        {source === 'reflection' && (
+          <Pressable onPress={() => setPickerVisible(true)} style={styles.changeLink} hitSlop={8}>
+            <Ionicons name="swap-horizontal-outline" size={16} color={theme.color.accent} />
+            <AppText style={styles.changeLinkText}>Choose a different verse, message or prayer</AppText>
+          </Pressable>
+        )}
 
         <AppText variant="label" style={styles.sectionLabel}>Font</AppText>
         <View style={styles.segment}>
@@ -157,7 +165,7 @@ export default function WallpaperEditorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screen: { paddingHorizontal: theme.space.lg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: theme.space.sm },
   backButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
@@ -169,6 +177,8 @@ const styles = StyleSheet.create({
   segmentItemActive: { backgroundColor: theme.color.surface },
   segmentText: { color: theme.color.textMuted },
   segmentTextActive: { color: theme.color.text },
+  changeLink: { flexDirection: 'row', alignItems: 'center', gap: theme.space.xs, marginTop: -theme.space.sm },
+  changeLinkText: { color: theme.color.accent, fontFamily: theme.font.sansMedium, fontSize: 13 },
   colorRow: { flexDirection: 'row', gap: theme.space.md },
   swatch: { width: 44, height: 44, borderRadius: theme.radius.pill, borderWidth: 2, borderColor: theme.color.border },
   swatchSelected: { borderColor: theme.color.accent },

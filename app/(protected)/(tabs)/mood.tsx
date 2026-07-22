@@ -6,7 +6,6 @@ import {
   Pressable,
   Modal,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Calendar } from 'react-native-calendars';
@@ -18,21 +17,15 @@ import Screen from '@/components/ui/Screen';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { theme } from '@/lib/theme';
-
-// Muted per-mood tokens matching the warm editorial palette
-const MOOD_COLORS: Record<MoodType, string> = {
-  Happy: theme.color.sand,
-  Grateful: theme.color.sage,
-  Hopeful: theme.color.dustyBlue,
-  Peaceful: theme.color.blush,
-  Anxious: theme.color.olive,
-  Sad: theme.color.deepBlue,
-  Overwhelmed: theme.color.rust,
-  Angry: theme.color.rust,
-};
+import { useTheme, type AppTheme } from '@/lib/theme';
 
 export default function MoodTab() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const modalStyles = useMemo(() => makeModalStyles(theme), [theme]);
+  // Saturated per-mood tokens: they carry their own contrast, so dots and bars
+  // stay legible on both paper and near-black.
+  const MOOD_COLORS = theme.moodColor;
   const { moodEntries, loadMoodEntries } = useMoodStore();
   const [selectedEntry, setSelectedEntry] = useState<MoodEntry | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -69,7 +62,7 @@ export default function MoodTab() {
         if (!marked[dateStr]) {
           marked[dateStr] = {
             marked: true,
-            dotColor: MOOD_COLORS[entry.mood],
+            dotColor: MOOD_COLORS[entry.mood].bg,
             entries: [],
           };
         }
@@ -182,12 +175,10 @@ export default function MoodTab() {
         paddingHorizontal: 0,
       },
     },
-  }), []);
+  }), [theme]);
 
   return (
     <Screen style={styles.screenInner}>
-      <StatusBar style="dark" />
-
       {/* Header */}
       <View style={styles.header}>
         <AppText variant="display">Mood Calendar</AppText>
@@ -289,7 +280,7 @@ export default function MoodTab() {
                     <View
                       style={[
                         styles.distributionDot,
-                        { backgroundColor: MOOD_COLORS[mood as MoodType] },
+                        { backgroundColor: MOOD_COLORS[mood as MoodType].bg },
                       ]}
                     />
                     <AppText variant="body" style={styles.distributionLabel}>{mood}</AppText>
@@ -301,7 +292,7 @@ export default function MoodTab() {
                         styles.distributionBarFill,
                         {
                           width: `${percentage}%` as any,
-                          backgroundColor: MOOD_COLORS[mood as MoodType],
+                          backgroundColor: MOOD_COLORS[mood as MoodType].bg,
                         },
                       ]}
                     />
@@ -346,7 +337,7 @@ export default function MoodTab() {
                     <View
                       style={[
                         modalStyles.moodBadgeDot,
-                        { backgroundColor: MOOD_COLORS[selectedEntry.mood] },
+                        { backgroundColor: MOOD_COLORS[selectedEntry.mood].bg },
                       ]}
                     />
                     <AppText variant="title" style={modalStyles.moodBadgeText}>
@@ -441,7 +432,7 @@ export default function MoodTab() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screenInner: {
     paddingHorizontal: 0,
   },
@@ -552,14 +543,14 @@ const styles = StyleSheet.create({
   },
 });
 
-const modalStyles = StyleSheet.create({
+const makeModalStyles = (theme: AppTheme) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.color.overlay,
   },
   modalContent: {
     backgroundColor: theme.color.paper,

@@ -13,15 +13,14 @@ import { usePurchasesStore } from "@/lib/stores/purchases";
 import { getSermons } from "@/lib/sermonApi";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useMoodStore } from "@/lib/stores/mood";
-import { theme } from "@/lib/theme";
+import { useTheme, type AppTheme } from "@/lib/theme";
 import type { SavedSermon, Sermon } from "@/lib/types";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   TextInput,
   View,
@@ -31,18 +30,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 // Most-recent reflections shown on home before the "View all" link appears.
 const HOME_REFLECTION_CAP = 6;
 
-// Muted mood dot colors from theme palette
-const MOOD_DOT_COLORS: Record<string, string> = {
-  Happy: theme.color.sand,
-  Grateful: theme.color.sage,
-  Hopeful: theme.color.dustyBlue,
-  Peaceful: theme.color.blush,
-  Anxious: theme.color.olive,
-  Sad: theme.color.deepBlue,
-  Overwhelmed: theme.color.rust,
-  Angry: theme.color.rust,
-};
-
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -51,6 +38,8 @@ function getTimeGreeting(): string {
 }
 
 export default function Home() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { user } = useAuthStore();
   const { showSuccess, showError } = useToast();
   const { weeklySummary, loadMoodEntries, getWeeklySummary } = useMoodStore();
@@ -152,7 +141,6 @@ export default function Home() {
 
   return (
     <Screen style={styles.screenInner}>
-      <StatusBar barStyle="dark-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -249,8 +237,9 @@ export default function Home() {
                   (e) => e.date.split('T')[0] === dateStr
                 );
                 const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
+                // The saturated mood tokens read on both paper and near-black.
                 const dotColor = dayEntry
-                  ? (MOOD_DOT_COLORS[dayEntry.mood] ?? theme.color.sand)
+                  ? (theme.moodColor[dayEntry.mood]?.bg ?? theme.color.accent)
                   : theme.color.border;
 
                 return (
@@ -370,7 +359,7 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screenInner: {
     paddingHorizontal: 0,
   },

@@ -1,8 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { theme } from '@/lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/theme';
+
+const TAB_BAR_HEIGHT = 64;
 
 export default function TabsLayout() {
+  const theme = useTheme();
+  // A fixed tabBar height overrides React Navigation's automatic bottom inset,
+  // which let Android's navigation bar sit on top of the Mood and Profile tabs
+  // and swallow their taps. Add the inset back explicitly.
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -12,8 +21,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: theme.color.surface,
           borderTopColor: theme.color.border,
-          height: 64,
-          paddingBottom: 8,
+          height: TAB_BAR_HEIGHT + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: { fontFamily: theme.font.sansMedium, fontSize: 11 },

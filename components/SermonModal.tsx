@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -16,12 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '@/components/ToastProvider';
 import AppText from '@/components/ui/AppText';
 import Card from '@/components/ui/Card';
+import Loader from '@/components/ui/Loader';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { splitVerseString } from '@/lib/cards';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
 import { generateStory } from '@/lib/sermonAi';
 import { generatePrayer } from '@/lib/prayerAi';
-import { theme } from '@/lib/theme';
+import { useTheme, type AppTheme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
 
 interface SermonModalProps {
@@ -35,13 +36,18 @@ interface SermonModalProps {
 }
 
 // ids match Home card color ids: 1→sage, 2→sand, 3→dustyBlue, 4→olive, 5→blush, 6→rust
-const COLOR_OPTIONS = [
-  { id: '1', color: theme.color.sage },
-  { id: '2', color: theme.color.sand },
-  { id: '3', color: theme.color.dustyBlue },
-  { id: '4', color: theme.color.olive },
-  { id: '5', color: theme.color.blush },
-  { id: '6', color: theme.color.rust },
+const COLOR_TONES = ['sage', 'sand', 'dustyBlue', 'olive', 'blush', 'rust'] as const;
+const COLOR_OPTIONS = COLOR_TONES.map((tone, i) => ({ id: String(i + 1), tone }));
+
+const REFLECTION_MESSAGES = [
+  'Turning to Scripture…',
+  'Sitting with your words a moment…',
+  'Finding the passage that meets you here…',
+];
+const ENCOURAGEMENT_MESSAGES = [
+  'Listening to how you feel…',
+  'Looking for a word of comfort…',
+  'Bringing your heart to Scripture…',
 ];
 
 export default function SermonModal({
@@ -53,6 +59,8 @@ export default function SermonModal({
   onSave,
   loading = false,
 }: SermonModalProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { showSuccess, showError, showInfo } = useToast();
   const router = useRouter();
   const [title, setTitle] = useState(topic);
@@ -64,7 +72,12 @@ export default function SermonModal({
   const [prayerLoading, setPrayerLoading] = useState(false);
 
   const displaySermon = savedSermon
-    ? { verses: savedSermon.verses, interpretation: savedSermon.interpretation, story: savedSermon.story }
+    ? {
+        verses: savedSermon.verses,
+        interpretation: savedSermon.interpretation,
+        story: savedSermon.story,
+        prayer: savedSermon.prayer,
+      }
     : sermon;
 
   // A mood entry's saved title is prefixed "Mood: " — used for the header label.
@@ -80,9 +93,10 @@ export default function SermonModal({
       setTitle(topic);
       setSelectedColor(COLOR_OPTIONS[0].id);
     }
-    // Fresh generations no longer bundle a story; only saved reflections may carry one.
+    // Fresh generations no longer bundle a story or prayer; only saved
+    // reflections carry them back in.
     setStory(savedSermon?.story ?? '');
-    setPrayer('');
+    setPrayer(savedSermon?.prayer ?? '');
     setStoryLoading(false);
     setPrayerLoading(false);
   }, [visible, topic, savedSermon]);
@@ -107,21 +121,35 @@ export default function SermonModal({
     } as never);
   };
 
+  const shareBody = () => {
+    if (!displaySermon) return '';
+    const parts = [title, '', displaySermon.interpretation, '', displaySermon.verses.join('\n')];
+    if (story) parts.push('', 'A Story', story);
+    if (prayer) parts.push('', 'A Prayer', prayer);
+    return parts.join('\n');
+  };
+
   const handleShare = async () => {
     if (!displaySermon) return;
-    const body = [
-      title,
-      '',
-      displaySermon.interpretation,
-      '',
-      displaySermon.verses.join('\n'),
-      '',
-      story,
-    ].join('\n');
     try {
-      await Share.share({ message: body });
+      await Share.share({ message: shareBody() });
     } catch {
       showError('Share failed', 'Could not open the share sheet');
+    }
+  };
+
+  /**
+   * A story or prayer generated while reading an *already saved* reflection is
+   * persisted straight away — otherwise it silently disappears when the reader
+   * is closed without tapping Update.
+   */
+  const persistAddition = async (patch: { story?: string; prayer?: string }) => {
+    if (!savedSermon?.id) return;
+    try {
+      await updateSermon({ ...savedSermon, color: selectedColor, story, prayer, ...patch });
+      onSave();
+    } catch (error) {
+      console.error('Error persisting generated section:', error);
     }
   };
 
@@ -131,6 +159,7 @@ export default function SermonModal({
     try {
       const result = await generateStory(displaySermon.interpretation);
       setStory(result);
+      await persistAddition({ story: result });
     } catch (error: any) {
       showError('Could not add a story', error?.message || 'Please try again.');
     } finally {
@@ -144,6 +173,7 @@ export default function SermonModal({
     try {
       const result = await generatePrayer(displaySermon.interpretation);
       setPrayer(result);
+      await persistAddition({ prayer: result });
     } catch (error: any) {
       showError('Could not create a prayer', error?.message || 'Please try again.');
     } finally {
@@ -164,7 +194,8 @@ export default function SermonModal({
           title: title.trim(),
           verses: displaySermon.verses,
           interpretation: displaySermon.interpretation,
-          story: story,
+          story,
+          prayer,
           color: selectedColor,
         });
         showSuccess('Reflection updated', 'Your reflection has been updated');
@@ -173,7 +204,8 @@ export default function SermonModal({
           title: title.trim(),
           verses: displaySermon.verses || [],
           interpretation: displaySermon.interpretation || '',
-          story: story,
+          story,
+          prayer,
           color: selectedColor,
           topic,
         });
@@ -209,8 +241,10 @@ export default function SermonModal({
 
         {loading || !displaySermon ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color={theme.color.accent} />
-            <AppText variant="body" style={styles.loadingText}>{isEncouragement ? 'Creating your encouragement…' : 'Preparing your reflection…'}</AppText>
+            <Loader
+              icon={isEncouragement ? 'heart-outline' : 'book-outline'}
+              messages={isEncouragement ? ENCOURAGEMENT_MESSAGES : REFLECTION_MESSAGES}
+            />
           </View>
         ) : (
           <>
@@ -235,16 +269,23 @@ export default function SermonModal({
               </View>
               <AppText variant="body" style={styles.messageBody}>{displaySermon.interpretation}</AppText>
 
-              {/* SCRIPTURE — verses as inline cards */}
+              {/* SCRIPTURE — verses as inline cards, each individually copyable */}
               <View style={styles.sectionHeadRow}>
                 <AppText variant="label">Scripture</AppText>
-                <Pressable onPress={() => handleCopy(displaySermon.verses.join('\n\n'), 'Scripture')} hitSlop={8}>
-                  <Ionicons name="copy-outline" size={18} color={theme.color.accent} />
+                <Pressable onPress={() => handleCopy(displaySermon.verses.join('\n\n'), 'All scripture')} hitSlop={8}>
+                  <AppText variant="label" style={styles.copyAll}>Copy all</AppText>
                 </Pressable>
               </View>
               {displaySermon.verses.map((verse, i) => (
                 <Card key={i} tone="blush" style={styles.verseCard}>
-                  <AppText variant="verse">{verse}</AppText>
+                  <AppText variant="verse" style={styles.verseText}>{verse}</AppText>
+                  <Pressable
+                    onPress={() => handleCopy(verse, 'Verse')}
+                    style={styles.verseCopyButton}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="copy-outline" size={16} color={theme.color.text} />
+                  </Pressable>
                 </Card>
               ))}
 
@@ -276,7 +317,7 @@ export default function SermonModal({
                 </Pressable>
               )}
 
-              {/* A PRAYER — on-demand, ephemeral (not saved) */}
+              {/* A PRAYER — on-demand, saved with the reflection */}
               {prayer ? (
                 <>
                   <View style={styles.sectionHeadRow}>
@@ -312,12 +353,12 @@ export default function SermonModal({
                     <View
                       style={[
                         styles.swatch,
-                        { backgroundColor: option.color },
+                        { backgroundColor: theme.color[option.tone] },
                         selectedColor === option.id && styles.swatchSelected,
                       ]}
                     >
                       {selectedColor === option.id && (
-                        <Ionicons name="checkmark" size={16} color={theme.color.accentText} />
+                        <Ionicons name="checkmark" size={16} color={theme.color.text} />
                       )}
                     </View>
                   </Pressable>
@@ -349,7 +390,7 @@ export default function SermonModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: AppTheme) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.paper },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -357,8 +398,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: theme.color.border,
   },
   iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: theme.space.lg },
-  loadingText: { color: theme.color.textMuted },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: theme.space.xl, paddingBottom: theme.space.xxl },
   title: {
@@ -369,6 +409,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginTop: theme.space.xl, marginBottom: theme.space.sm,
   },
+  copyAll: { color: theme.color.accent },
   messageBody: { lineHeight: 24 },
   generateBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -377,7 +418,19 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface,
   },
   generateBtnText: { color: theme.color.accent },
-  verseCard: { marginBottom: theme.space.md },
+  verseCard: { marginBottom: theme.space.md, paddingRight: theme.space.xxl + theme.space.sm },
+  verseText: { flexShrink: 1 },
+  verseCopyButton: {
+    position: 'absolute',
+    top: theme.space.sm,
+    right: theme.space.sm,
+    width: 32,
+    height: 32,
+    borderRadius: theme.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)',
+  },
   colorLabel: { marginTop: theme.space.xl, marginBottom: theme.space.sm },
   colorRow: { flexDirection: 'row', gap: theme.space.md },
   swatch: {
