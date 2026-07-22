@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --test lib/**/*.test.ts"
+    "test": "node --experimental-strip-types --test \"lib/**/*.test.ts\" \"components/**/*.test.ts\""
   },
   "dependencies": {
     "@expo-google-fonts/newsreader": "^0.4.1",
