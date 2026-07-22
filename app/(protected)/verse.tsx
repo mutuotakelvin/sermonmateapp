@@ -129,6 +129,9 @@ export default function VerseScreen() {
           <Pressable
             key={t}
             onPress={() => setTranslation(t)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: translation === t }}
+            accessibilityLabel={`${t} translation`}
             style={[styles.segmentItem, translation === t && styles.segmentItemActive]}
           >
             <AppText
@@ -238,9 +241,13 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
     flex: 1, height: 44, borderRadius: theme.radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  segmentItemActive: { backgroundColor: theme.color.charcoal },
+  // The selected pill was `charcoal`, which is #2C2621 against a #2A2521 track in dark
+  // mode — a 2-point difference, so the selection was invisible and only the text colour
+  // hinted at it. `accent`/`accentText` is the app's filled-control pair and reads
+  // clearly in both schemes.
+  segmentItemActive: { backgroundColor: theme.color.accent },
   segmentText: { color: theme.color.textMuted },
-  segmentTextActive: { color: theme.color.onCharcoal },
+  segmentTextActive: { color: theme.color.accentText },
   settingsCard: { marginTop: theme.space.xl, gap: theme.space.xs },
   settingRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

@@ -55,6 +55,25 @@ export class GooglePlayServicesError extends Error {
   }
 }
 
+/**
+ * Google rejected the request as misconfigured (CommonStatusCodes.DEVELOPER_ERROR, "10").
+ *
+ * On Android this almost always means the signing certificate's SHA-1 is not registered
+ * against an Android OAuth client for this package in the Firebase/Cloud project. It is
+ * per-certificate, so a build signed with a different key than the one registered fails
+ * even though the same code works elsewhere — note that Play App Signing re-signs
+ * uploads, so the upload key AND the Play app-signing key both need registering.
+ *
+ * Worth a distinct error because the generic "please try again" sends people in circles:
+ * retrying can never fix it.
+ */
+export class GoogleConfigError extends Error {
+  constructor() {
+    super('GOOGLE_DEVELOPER_ERROR');
+    this.name = 'GoogleConfigError';
+  }
+}
+
 // Runs the native Google account picker and returns the Google idToken.
 // Throws GoogleSignInCancelled if the user dismisses the sheet, or
 // GooglePlayServicesError if Play services is unavailable. Throws a plain Error
@@ -98,6 +117,11 @@ export async function signInWithGoogleIdToken(): Promise<string> {
     }
     if (s.isErrorWithCode(error) && error.code === s.statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
       throw new GooglePlayServicesError();
+    }
+    // The native module rejects with String(CommonStatusCodes.DEVELOPER_ERROR). It is not
+    // in `statusCodes`, so match the literal.
+    if (String((error as { code?: unknown })?.code) === '10') {
+      throw new GoogleConfigError();
     }
     throw error;
   }

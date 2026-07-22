@@ -23,7 +23,7 @@ type Palette = {
   blush: string;
   charcoal: string;
   danger: string;
-  /** Foreground for the always-dark `charcoal` surfaces (hero verse card, segments). */
+  /** Foreground for the always-dark `charcoal` surfaces (the hero verse card). */
   onCharcoal: string;
   /** Scrim behind bottom sheets and modals. */
   overlay: string;

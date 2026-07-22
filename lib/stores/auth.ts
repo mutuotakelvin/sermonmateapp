@@ -11,6 +11,7 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import {
+  GoogleConfigError,
   GooglePlayServicesError,
   GoogleSignInCancelled,
   signInWithGoogleIdToken,
@@ -152,6 +153,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       if (error instanceof GooglePlayServicesError) {
         return { success: false, message: 'Google Play services is required to sign in with Google.' };
+      }
+      if (error instanceof GoogleConfigError) {
+        // Retrying cannot fix this — say so rather than inviting another attempt.
+        console.error(
+          'Google sign-in DEVELOPER_ERROR (10): this build\'s signing SHA-1 is not ' +
+            'registered against an Android OAuth client for com.sermonmate.app.',
+        );
+        return {
+          success: false,
+          message: 'Google sign-in isn\'t set up for this build. Use your email and password.',
+        };
       }
       console.error('Google login error:', error?.code, error?.message);
       return { success: false, message: googleAuthErrorMessage(error) };
