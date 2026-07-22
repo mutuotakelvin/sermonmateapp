@@ -38,15 +38,19 @@ Grab the **"Command line tools only"** Linux zip from
 <https://developer.android.com/studio#command-line-tools-only>. (Take the URL from that
 page rather than guessing a build number — Google bumps it often.)
 
+The zip contains a single top-level `cmdline-tools/` directory. That directory has to end
+up at `$ANDROID_HOME/cmdline-tools/latest`:
+
 ```bash
 mkdir -p ~/Android/Sdk/cmdline-tools
-cd ~/Android/Sdk/cmdline-tools
-unzip ~/Downloads/commandlinetools-linux-*_latest.zip
-mv cmdline-tools latest
+unzip ~/Downloads/commandlinetools-linux-*_latest.zip -d /tmp/actools
+mv /tmp/actools/cmdline-tools ~/Android/Sdk/cmdline-tools/latest
 ```
 
 The rename to `latest` is required — `sdkmanager` looks for
 `$ANDROID_HOME/cmdline-tools/latest/bin`. Skipping it is the most common setup failure.
+
+(Done on this machine with build 15859902.)
 
 ## 3. Environment
 
@@ -83,14 +87,19 @@ grep -rn "ndkVersion" android/ | head
 ## 5. Install the SDK packages
 
 ```bash
-sdkmanager --licenses          # accept every prompt; Gradle will not build otherwise
-sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
-           "ndk;<version from step 4>" "cmake;3.22.1"
+yes | sdkmanager --licenses    # Gradle will not build until these are accepted
+sdkmanager "platform-tools" "platforms;android-36" "platforms;android-35" \
+           "build-tools;36.0.0" "build-tools;35.0.0" \
+           "ndk;27.1.12297006" "cmake;3.22.1"
 ```
 
-If a later build complains about a missing platform or build-tools version, install
-exactly what the error names — with licences accepted, Gradle also auto-downloads most
-missing SDK pieces on its own. The NDK is the one it usually won't fetch for you.
+These are the versions actually installed for Expo SDK 54 / RN 0.81.5 on 2026-07-22 —
+the NDK number comes from `node_modules/react-native/gradle/libs.versions.toml`, which is
+the authoritative pin. Both 35 and 36 are installed as cheap insurance; the whole SDK
+comes to about 2.8 GB.
+
+`sdkmanager` now prints a deprecation notice pointing at a new `android sdk` CLI. It still
+works — ignore it.
 
 ## 6. Test build (APK you can sideload)
 
