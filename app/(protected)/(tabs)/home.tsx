@@ -15,6 +15,7 @@ import { useAuthStore } from "@/lib/stores/auth";
 import { useMoodStore } from "@/lib/stores/mood";
 import { useTheme, type AppTheme } from "@/lib/theme";
 import type { SavedSermon, Sermon } from "@/lib/types";
+import { localDateKey } from "@/lib/localDate";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -232,9 +233,12 @@ export default function Home() {
               {Array.from({ length: 7 }).map((_, index) => {
                 const date = new Date(weeklySummary.weekStart);
                 date.setDate(date.getDate() + index);
-                const dateStr = date.toISOString().split('T')[0];
+                // Local keys on BOTH sides. toISOString() converts to UTC first,
+                // which east of Greenwich shifts local midnight back a day and
+                // filed every check-in under the following weekday.
+                const dateStr = localDateKey(date);
                 const dayEntry = weeklySummary.entries.find(
-                  (e) => e.date.split('T')[0] === dateStr
+                  (e) => localDateKey(new Date(e.date)) === dateStr
                 );
                 const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
                 // The saturated mood tokens read on both paper and near-black.
