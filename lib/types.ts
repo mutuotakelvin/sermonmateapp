@@ -58,3 +58,22 @@ export type WeeklyMoodSummary = {
 }
 
 
+
+export type PrayerSlot = {
+  id: string
+  label: string
+  hour: number
+  minute: number
+  /** Pre-filled suggestions start false — never schedule what wasn't asked for. */
+  enabled: boolean
+}
+
+export type PrayerLogEntry = {
+  id: string
+  /** null when logged outside any slot ("I prayed just now"). */
+  slotId: string | null
+  loggedAt: Date
+  /** "YYYY-MM-DD" in the user's local time. See lib/localDate.ts. */
+  localDate: string
+  note?: string
+}

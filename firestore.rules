@@ -17,6 +17,16 @@ service cloud.firestore {
       match /sermons/{sermonId} {
         allow read, write: if isOwner(uid);
       }
+
+      // Prayer slots and the prayer log. Unlike `pro`, nothing here is
+      // server-owned — a prayer log is not worth money, so the owner writes it.
+      match /prayer/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /prayerLog/{entryId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // Server (Admin SDK) only — the AI usage counter is never client-accessible.
