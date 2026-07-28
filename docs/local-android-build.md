@@ -225,3 +225,30 @@ npx eas-cli submit --platform android --path <file>.aab
 a store round-trip. Adding it would let you push JS-only changes to testers over the air in
 seconds. It needs one native build to take effect, so the production build in step 8 is the
 natural moment to include it.
+
+### Prayer times (added 2026-07-29)
+
+- [ ] Fresh install: Morning/Midday/Evening appear as suggestions and are
+      **disabled**. Nothing is scheduled until one is switched on.
+- [ ] Enabling a slot schedules a reminder that fires at the set minute.
+- [ ] **Regression — this is why `lib/reminderScheduler.ts` exists:** with prayer
+      slots enabled, change the daily verse reminder time. Both the verse
+      reminder AND every prayer reminder must survive. Before the refactor, the
+      verse re-arm cancelled everything.
+- [ ] "I prayed" from the notification, tested three ways: foregrounded,
+      backgrounded, and after `adb shell am force-stop com.sermonmate.app`.
+      The force-stopped case is the uncertain one — if the entry is lost, flip
+      LOG_PRAYER to `opensAppToForeground: true` in `lib/reminderScheduler.ts`.
+- [ ] Log a prayer in aeroplane mode; it appears immediately and is still there
+      after reconnecting and restarting.
+- [ ] A prayer logged between 00:00 and 02:59 local is filed under that
+      morning's date, not the previous day.
+- [ ] Streak survives a missed day (grace), and the calendar marks it sand
+      rather than anything that reads as failure.
+- [ ] Home row shows "N of M today" and matches the prayer screen.
+
+### Mood (regression, fixed 2026-07-29)
+
+- [ ] Check in on a given day; the filled dot on home sits under **that**
+      weekday and agrees with the Mood Calendar. Previously the home strip was
+      shifted a day because it derived keys via `toISOString()`.

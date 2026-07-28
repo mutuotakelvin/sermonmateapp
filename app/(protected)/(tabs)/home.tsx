@@ -16,6 +16,8 @@ import { useMoodStore } from "@/lib/stores/mood";
 import { useTheme, type AppTheme } from "@/lib/theme";
 import type { SavedSermon, Sermon } from "@/lib/types";
 import { localDateKey } from "@/lib/localDate";
+import PrayerTimesCard from "@/components/PrayerTimesCard";
+import { usePrayerStore } from "@/lib/stores/prayer";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -44,6 +46,7 @@ export default function Home() {
   const { user } = useAuthStore();
   const { showSuccess, showError } = useToast();
   const { weeklySummary, loadMoodEntries, getWeeklySummary } = useMoodStore();
+  const loadPrayer = usePrayerStore((state) => state.load);
   const router = useRouter();
   const [topic, setTopic] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,6 +63,7 @@ export default function Home() {
   useEffect(() => {
     loadMoodEntries();
     getWeeklySummary();
+    loadPrayer();
   }, []);
 
   // Reload reflections whenever home regains focus, so a delete performed on the
@@ -215,6 +219,8 @@ export default function Home() {
             ))}
           </View>
         </Card>
+
+        <PrayerTimesCard onPress={() => router.push('/prayer')} />
 
         {/* This Week's Mood Card */}
         {weeklySummary && weeklySummary.entries.length > 0 && (

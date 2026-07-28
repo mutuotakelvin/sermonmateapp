@@ -13,6 +13,7 @@ import { configureNotifications, rescheduleDailyVerse } from '@/lib/notification
 import { configurePurchases, identifyPurchaser, logoutPurchaser, addProListener, syncEntitlement } from '@/lib/purchases';
 import { useVerseStore } from '@/lib/stores/verse';
 import { usePurchasesStore } from '@/lib/stores/purchases';
+import { usePrayerStore } from '@/lib/stores/prayer';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useAppearanceStore } from '@/lib/stores/appearance';
 import { useTheme } from '@/lib/theme';
@@ -117,15 +118,37 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [initialized]);
 
-  // Route notification taps (cold start and background) to the verse screen.
+  // Route notification taps (cold start and background) to the right screen, and
+  // handle the prayer reminder's inline actions.
+  //
+  // "I prayed" is declared opensAppToForeground: false, so when the app is alive
+  // this logs without a visible launch. When the app was killed there is no JS to
+  // run at tap time — expo-notifications replays the response here on next start,
+  // which is why the write happens from the response rather than from a native
+  // handler. If that replay proves unreliable on device, flip LOG_PRAYER to
+  // opensAppToForeground: true in reminderScheduler.ts and log from the screen.
   useEffect(() => {
     const id = lastNotificationResponse?.notification.request.identifier;
     if (!id || id === handledResponseId.current) return;
-    const screen =
-      lastNotificationResponse?.notification.request.content.data?.screen;
+
+    const data = lastNotificationResponse?.notification.request.content.data;
+    const action = lastNotificationResponse?.actionIdentifier;
+    const screen = data?.screen;
+
     if (screen === 'verse') {
       handledResponseId.current = id;
       router.push('/(protected)/verse' as never);
+      return;
+    }
+
+    if (screen === 'prayer') {
+      handledResponseId.current = id;
+      if (action === 'LOG_PRAYER') {
+        const slotId = typeof data?.slotId === 'string' ? data.slotId : null;
+        usePrayerStore.getState().logPrayer(slotId).catch(() => {});
+        return;
+      }
+      router.push('/(protected)/prayer' as never);
     }
   }, [lastNotificationResponse, router]);
 
