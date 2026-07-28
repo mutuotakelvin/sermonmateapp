@@ -1,0 +1,308 @@
+<title>SermonMate — Prayer Goals Screens</title>
+<style>
+  :root {
+    --paper:#F2EDE4; --surface:#FBF8F2; --surfaceAlt:#EDE6DA; --border:#E2D9CB;
+    --accent:#B0532F; --accentText:#FBF8F2; --text:#2A2420; --textMuted:#7A6E62;
+    --sage:#7F9370; --dustyBlue:#7FA0C4; --sand:#D8CBB0; --charcoal:#2E2A25;
+    --danger:#B23B2E; --onCharcoal:#F2EDE4;
+    --pageBg:#E8E1D5; --noteBg:#FBF8F2; --noteBorder:#E2D9CB;
+  }
+  :root[data-theme="dark"] {
+    --paper:#141110; --surface:#1E1A17; --surfaceAlt:#2A2521; --border:#3A332C;
+    --accent:#D9764B; --accentText:#1A1512; --text:#F1EAE0; --textMuted:#A2968A;
+    --sage:#3F4F3B; --dustyBlue:#37485C; --sand:#4A4133; --charcoal:#2C2621;
+    --danger:#D9604F; --onCharcoal:#F1EAE0;
+    --pageBg:#0C0A09; --noteBg:#1E1A17; --noteBorder:#3A332C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#141110; --surface:#1E1A17; --surfaceAlt:#2A2521; --border:#3A332C;
+      --accent:#D9764B; --accentText:#1A1512; --text:#F1EAE0; --textMuted:#A2968A;
+      --sage:#3F4F3B; --dustyBlue:#37485C; --sand:#4A4133; --charcoal:#2C2621;
+      --danger:#D9604F; --onCharcoal:#F1EAE0;
+      --pageBg:#0C0A09; --noteBg:#1E1A17; --noteBorder:#3A332C;
+    }
+  }
+  body {
+    background: var(--pageBg); color: var(--text); margin:0; padding:32px 20px 80px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height:1.55;
+  }
+  .wrap { max-width:1180px; margin:0 auto; }
+  h1 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-size:2rem; margin:0 0 6px; letter-spacing:-.01em; }
+  .sub { color:var(--textMuted); margin:0 0 28px; max-width:60ch; }
+  h2 { font-family: ui-serif, Georgia, serif; font-size:1.25rem; margin:44px 0 4px; }
+  h2 .num { color:var(--accent); font-size:.85em; margin-right:.4em; }
+  .caption { color:var(--textMuted); margin:0 0 18px; max-width:68ch; font-size:.94rem; }
+  .row { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; gap:10px; }
+  .tag { font-size:.75rem; color:var(--textMuted); text-transform:uppercase; letter-spacing:.08em; }
+
+  /* phone frame */
+  .phone {
+    width:300px; border-radius:32px; background:var(--paper); border:1px solid var(--border);
+    box-shadow:0 12px 32px rgba(0,0,0,.16); overflow:hidden; flex:0 0 auto;
+  }
+  .status { display:flex; justify-content:space-between; padding:10px 18px 4px; font-size:.72rem; color:var(--textMuted); }
+  .screen { padding:8px 18px 22px; min-height:520px; display:flex; flex-direction:column; }
+  .scr-title { font-family:ui-serif, Georgia, serif; font-size:1.35rem; margin:6px 0 2px; }
+  .scr-sub { color:var(--textMuted); font-size:.84rem; margin:0 0 16px; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:14px 16px; }
+  .card + .card { margin-top:10px; }
+
+  /* slot rows */
+  .slot { display:flex; align-items:center; gap:12px; }
+  .tick {
+    width:30px; height:30px; border-radius:50%; border:2px solid var(--border);
+    display:grid; place-items:center; font-size:.9rem; color:transparent; flex:0 0 auto;
+  }
+  .tick.done { background:var(--sage); border-color:var(--sage); color:#fff; }
+  .tick.now { border-color:var(--accent); border-style:dashed; }
+  .slot-main { flex:1; min-width:0; }
+  .slot-name { font-weight:600; font-size:.97rem; }
+  .slot-time { color:var(--textMuted); font-size:.82rem; }
+  .slot-note { color:var(--textMuted); font-size:.79rem; font-style:italic; margin-top:3px; }
+  .pill { font-size:.7rem; padding:3px 9px; border-radius:999px; background:var(--surfaceAlt); color:var(--textMuted); }
+  .pill.grace { background:var(--sand); color:var(--charcoal); }
+
+  /* streak header */
+  .streak { background:var(--charcoal); color:var(--onCharcoal); border-radius:20px; padding:16px 18px; }
+  .streak-n { font-family:ui-serif, Georgia, serif; font-size:2.1rem; line-height:1; }
+  .streak-l { opacity:.8; font-size:.82rem; margin-top:4px; }
+  .dots { display:flex; gap:6px; margin-top:14px; }
+  .dot { width:22px; height:22px; border-radius:7px; background:rgba(255,255,255,.14); display:grid; place-items:center; font-size:.62rem; opacity:.9; }
+  .dot.full { background:var(--sage); }
+  .dot.part { background:rgba(255,255,255,.34); }
+  .dot.grace { background:var(--sand); color:var(--charcoal); }
+
+  .btn { background:var(--accent); color:var(--accentText); border:none; border-radius:14px; padding:12px 16px; font-size:.92rem; font-weight:600; width:100%; text-align:center; }
+  .btn.ghost { background:transparent; color:var(--accent); border:1px solid var(--border); }
+  .spacer { flex:1; }
+
+  /* notification */
+  .notif { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:14px 16px; }
+  .notif-head { display:flex; gap:8px; align-items:center; font-size:.74rem; color:var(--textMuted); margin-bottom:8px; }
+  .ico { width:18px; height:18px; border-radius:5px; background:var(--accent); }
+  .notif-actions { display:flex; gap:10px; margin-top:14px; border-top:1px solid var(--border); padding-top:11px; }
+  .notif-actions span { font-size:.83rem; font-weight:600; color:var(--accent); }
+  .lock { background:linear-gradient(160deg, var(--charcoal), #4a423a); padding:22px 14px; min-height:520px; display:flex; flex-direction:column; gap:14px; }
+  .lock-time { color:var(--onCharcoal); text-align:center; font-family:ui-serif, Georgia, serif; font-size:2.6rem; margin:14px 0 20px; }
+
+  /* sheet */
+  .sheet { background:var(--surface); border-top-left-radius:22px; border-top-right-radius:22px; border:1px solid var(--border); padding:18px 16px 20px; margin-top:auto; }
+  .grabber { width:38px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 14px; }
+  .field { background:var(--paper); border:1px solid var(--border); border-radius:12px; padding:11px 13px; color:var(--textMuted); font-size:.87rem; }
+  .timebox { display:flex; gap:8px; }
+  .timebox div { flex:1; text-align:center; background:var(--paper); border:1px solid var(--border); border-radius:12px; padding:13px 0; font-size:1.15rem; font-family:ui-serif, Georgia, serif; }
+
+  /* calendar */
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal div { aspect-ratio:1; border-radius:8px; background:var(--surfaceAlt); display:grid; place-items:center; font-size:.66rem; color:var(--textMuted); }
+  .cal div.f { background:var(--sage); color:#fff; }
+  .cal div.p { background:var(--sand); color:var(--charcoal); }
+  .cal div.g { background:var(--sand); color:var(--charcoal); outline:2px dashed var(--accent); outline-offset:-3px; }
+
+  .note { background:var(--noteBg); border:1px solid var(--noteBorder); border-left:3px solid var(--accent); border-radius:10px; padding:12px 14px; max-width:330px; font-size:.87rem; }
+  .note b { color:var(--accent); }
+  .toggle { position:fixed; top:14px; right:14px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:999px; padding:8px 15px; font-size:.82rem; cursor:pointer; z-index:10; }
+  @media (max-width:700px){ .phone{width:100%; max-width:330px;} }
+</style>
+
+<button class="toggle" onclick="var r=document.documentElement;var d=getComputedStyle(r).getPropertyValue('--paper').trim()==='#141110';r.setAttribute('data-theme',d?'light':'dark')">Toggle theme</button>
+
+<div class="wrap">
+<h1>Prayer Goals — screen mockups</h1>
+<p class="sub">Proposed screens for the prayer routine feature. Colours are the real <code>lib/theme.ts</code> palette, so this is roughly what it will look like in the app. Toggle the theme top-right. Anything here can change — this is for review, not a build spec.</p>
+
+<h2><span class="num">1</span>Home entry point</h2>
+<p class="caption">A new row on the home screen, sitting with the existing entries. Shows today's progress at a glance so the home screen answers "where am I today?" without a tap.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮</span></div>
+    <div class="screen">
+      <div class="scr-title">Good morning</div>
+      <div class="scr-sub">Thursday, 30 July</div>
+      <div class="card"><div class="slot"><div class="slot-main"><div class="slot-name">Daily Reflection</div><div class="slot-time">Reflect on Scripture around whatever's on your heart.</div></div></div></div>
+      <div class="card" style="border-color:var(--accent)">
+        <div class="slot">
+          <div class="slot-main">
+            <div class="slot-name">Prayer times</div>
+            <div class="slot-time">1 of 3 today · 12 day streak</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            <span class="tick done" style="width:22px;height:22px;font-size:.7rem">✓</span>
+            <span class="tick now" style="width:22px;height:22px"></span>
+            <span class="tick" style="width:22px;height:22px"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="slot"><div class="slot-main"><div class="slot-name">Create a card</div><div class="slot-time">Share a verse or save it as a wallpaper</div></div></div></div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Note</span>
+    <div class="note">The three dots mirror the slots. A dashed ring marks the slot whose time is closest now — a glanceable "you're up" without any nagging copy.</div>
+  </div>
+</div>
+
+<h2><span class="num">2</span>Prayer times — the main screen</h2>
+<p class="caption">Today's slots, the streak, and a way to log a prayer that happened outside any slot. This is the screen the notification opens.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>13:02</span><span>▮▮▮</span></div>
+    <div class="screen">
+      <div class="scr-title">Prayer times</div>
+      <div class="scr-sub">Thursday, 30 July</div>
+      <div class="streak">
+        <div class="streak-n">12</div>
+        <div class="streak-l">days of prayer</div>
+        <div class="dots">
+          <div class="dot full">M</div><div class="dot full">T</div><div class="dot grace">W</div>
+          <div class="dot full">T</div><div class="dot part">F</div><div class="dot">S</div><div class="dot">S</div>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="card">
+        <div class="slot"><div class="tick done">✓</div><div class="slot-main"><div class="slot-name">Morning</div><div class="slot-time">6:30 · prayed at 6:41</div><div class="slot-note">for mum's health</div></div></div>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <div class="slot"><div class="tick now"></div><div class="slot-main"><div class="slot-name">Midday</div><div class="slot-time">13:00 · now</div></div><span class="pill">Log</span></div>
+      </div>
+      <div class="card">
+        <div class="slot"><div class="tick"></div><div class="slot-main"><div class="slot-name">Evening</div><div class="slot-time">21:00</div></div></div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost">I prayed just now</button>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Notes</span>
+    <div class="note"><b>Grace day (W)</b> is sand-coloured, not red. A missed day is marked as absorbed, never as failure — no broken-streak language anywhere in this screen.</div>
+    <div class="note"><b>"I prayed just now"</b> is the ad-hoc log. It counts toward the day even though it belongs to no slot, so praying at 14:00 instead of 13:00 is still recorded.</div>
+    <div class="note">The optional note ("for mum's health") appears inline under the slot. This is the seed of the prayer journal without being one yet.</div>
+  </div>
+</div>
+
+<h2><span class="num">3</span>The notification — one-tap logging</h2>
+<p class="caption">The friction reducer. Logging happens from the lock screen without opening the app, because a tracker you have to unlock for is a tracker people abandon.</p>
+<div class="row">
+  <div class="phone">
+    <div class="lock">
+      <div class="lock-time">13:00<br><span style="font-size:.85rem;font-family:ui-sans-serif,system-ui;opacity:.75">Thursday, 30 July</span></div>
+      <div class="notif">
+        <div class="notif-head"><span class="ico"></span> SermonMate · now</div>
+        <div style="font-weight:600;font-size:.95rem">Midday prayer</div>
+        <div style="color:var(--textMuted);font-size:.86rem;margin-top:2px">A few minutes, whenever you're ready.</div>
+        <div class="notif-actions"><span>I prayed</span><span>Pray with me</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Notes</span>
+    <div class="note"><b>"I prayed"</b> writes the log entry directly and dismisses. No app launch.</div>
+    <div class="note"><b>"Pray with me"</b> opens the app and generates a short prayer — this is the only part of the feature that spends AI quota.</div>
+    <div class="note">Copy is deliberately unpressured: "whenever you're ready", never "you're falling behind". Separate Android channel, so these can be muted without losing the daily verse.</div>
+  </div>
+</div>
+
+<h2><span class="num">4</span>Logging with a note</h2>
+<p class="caption">Opening the app to log gives you the option to say what you prayed about. Tapping "Done" without typing is the fast path — the note is never required.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>13:04</span><span>▮▮▮</span></div>
+    <div class="screen" style="background:rgba(0,0,0,.18)">
+      <div class="spacer"></div>
+      <div class="sheet">
+        <div class="grabber"></div>
+        <div class="scr-title" style="font-size:1.15rem">Midday prayer logged</div>
+        <div class="scr-sub">Anything you want to remember?</div>
+        <div class="field">for mum's health, and for the shop</div>
+        <div style="height:12px"></div>
+        <button class="btn">Done</button>
+        <div style="height:8px"></div>
+        <button class="btn ghost">Pray with me</button>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Note</span>
+    <div class="note">The log is already written when this sheet appears — closing it without typing loses nothing. That ordering matters: never make the record conditional on finishing a form.</div>
+  </div>
+</div>
+
+<h2><span class="num">5</span>Setting up a slot</h2>
+<p class="caption">Reached from an empty state or the edit affordance. Label plus time — nothing else.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:12</span><span>▮▮▮</span></div>
+    <div class="screen">
+      <div class="scr-title">Edit prayer time</div>
+      <div class="scr-sub">It will remind you daily at this time.</div>
+      <span class="tag">Name</span>
+      <div style="height:6px"></div>
+      <div class="field" style="color:var(--text)">Midday</div>
+      <div style="height:16px"></div>
+      <span class="tag">Time</span>
+      <div style="height:6px"></div>
+      <div class="timebox"><div>13</div><div>00</div></div>
+      <div style="height:16px"></div>
+      <div class="card" style="background:var(--surfaceAlt);border-style:dashed">
+        <div style="font-size:.83rem;color:var(--textMuted)">⚠ Exact alarms are off, so reminders may arrive late.</div>
+        <div style="height:8px"></div>
+        <button class="btn" style="padding:9px;font-size:.83rem">Turn on exact alarms</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn">Save</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" style="color:var(--danger);border-color:var(--border)">Delete this time</button>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Note</span>
+    <div class="note">Reuses the existing <code>ReminderStatus</code> → 'inexact' warning already built for the daily verse. Same component, same fix path — no new permission UX.</div>
+  </div>
+</div>
+
+<h2><span class="num">6</span>History</h2>
+<p class="caption">The long-term payoff. A month at a glance, plus the notes you left — this is what makes the feature worth keeping after the novelty passes.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>21:30</span><span>▮▮▮</span></div>
+    <div class="screen">
+      <div class="scr-title">Your prayer life</div>
+      <div class="scr-sub">July</div>
+      <div class="cal">
+        <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
+        <div class="f">1</div><div class="f">2</div><div class="p">3</div><div class="f">4</div><div class="f">5</div><div>6</div><div class="p">7</div>
+        <div class="f">8</div><div class="f">9</div><div class="f">10</div><div class="g">11</div><div class="f">12</div><div class="f">13</div><div class="p">14</div>
+        <div class="f">15</div><div class="f">16</div><div class="f">17</div><div class="f">18</div><div class="p">19</div><div class="f">20</div><div class="f">21</div>
+        <div class="f">22</div><div class="f">23</div><div class="f">24</div><div class="f">25</div><div class="f">26</div><div class="f">27</div><div class="f">28</div>
+        <div class="f">29</div><div class="p">30</div><div>31</div>
+      </div>
+      <div style="height:16px"></div>
+      <div style="display:flex;gap:12px;font-size:.72rem;color:var(--textMuted);flex-wrap:wrap">
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--sage)"></span> all slots</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--sand)"></span> some</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--sand);outline:1px dashed var(--accent)"></span> grace</span>
+      </div>
+      <div style="height:16px"></div>
+      <span class="tag">Recent notes</span>
+      <div style="height:8px"></div>
+      <div class="card"><div class="slot-time">30 Jul · Morning</div><div style="font-size:.88rem">for mum's health</div></div>
+      <div class="card"><div class="slot-time">28 Jul · Evening</div><div style="font-size:.88rem">thanksgiving — the results came back clear</div></div>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Notes</span>
+    <div class="note">No empty days rendered in red. Absence is just absence.</div>
+    <div class="note"><b>Recent notes</b> is where this quietly becomes a prayer journal. If it earns its keep, the backlogged prayer list grows out of here rather than being a separate feature.</div>
+  </div>
+</div>
+
+<h2>Open questions for you</h2>
+<div class="row">
+  <div class="note" style="max-width:none"><b>1.</b> Should prayer times live as a tab, or as a row on home (shown here)? A tab is more prominent but you have three already.<br><br><b>2.</b> Default slots on first run — offer Morning/Midday/Evening pre-filled, or start empty and let people build their own?<br><br><b>3.</b> How many grace days per week? One is shown. Two is more forgiving; zero makes it a plain streak.</div>
+</div>
+</div>
