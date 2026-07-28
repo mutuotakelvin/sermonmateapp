@@ -69,11 +69,14 @@ which is device-local, a streak must survive a reinstall or a new phone. Losing 
 ```
 
 `localDate` is stored explicitly and is **not** derived from `loggedAt` at read
-time. Streaks belong to the user's day, not UTC. Kenya is UTC+3, so a 21:00
-prayer is already tomorrow in UTC; deriving the date server-side or in UTC would
-break every Kenyan user's streak nightly. This deliberately differs from
-`utcDay()` in `functions/src/index.ts`, which is correct there because quota
-periods are ours to define.
+time. Streaks belong to the user's day, not UTC. Kenya is UTC+3, so UTC lags
+local time: a prayer logged between 00:00 and 02:59 local falls on the *previous*
+UTC date. Deriving the date in UTC would file an early-morning prayer under
+yesterday — silently breaking a streak the user actually kept, and double-marking
+the day before. (In negative-offset zones the same bug appears at the other end
+of the day, filing late-evening prayers under tomorrow.) This deliberately
+differs from `utcDay()` in `functions/src/index.ts`, which is correct there
+because quota periods are ours to define, not the user's.
 
 Firestore rules: a user reads and writes their own `prayer/**` and `prayerLog/**`
 documents. Nothing here is server-owned — unlike `pro`, a prayer log is not worth
@@ -161,7 +164,8 @@ Detailed mockups with annotations live in `docs/prayer-goals-mockups.html`.
   grace calculation over date sets — consecutive days, single miss absorbed,
   second miss resets, grace window rolling correctly, today-not-yet-logged not
   breaking the streak. Plus local-date derivation at the timezone boundary: a
-  21:00 Nairobi prayer must land on today.
+  01:00 Nairobi prayer must land on that morning's date, not the previous day as
+  a UTC-derived date would give.
 - **On device (added to the smoke test in `docs/local-android-build.md`):**
   reminders firing at the set times; editing the verse reminder time leaving
   prayer reminders intact (the regression this design exists to prevent); the
