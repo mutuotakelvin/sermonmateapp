@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { computeStreak } from './prayerStreak.ts';
+import { computeStreak, computeBestStreak } from './prayerStreak.ts';
 
 // Run with: npm test
 //
@@ -75,4 +75,46 @@ test('duplicate entries on one day count once', () => {
 test('a streak spanning a month boundary is continuous', () => {
   const result = computeStreak(['2026-06-29', '2026-06-30', '2026-07-01'], '2026-07-01');
   assert.equal(result.current, 3);
+});
+
+// Best streak — the number that keeps someone going after a break. It uses the
+// same grace rule as the current streak, so the two can never disagree about
+// what counts as continuous.
+
+test('best streak is the longest run, not the current one', () => {
+  const logged = [
+    '2026-07-01', '2026-07-02', '2026-07-03', '2026-07-04', '2026-07-05',
+    // long gap
+    '2026-07-20', '2026-07-21',
+  ];
+  assert.equal(computeBestStreak(logged), 5);
+});
+
+test('best streak absorbs a single miss the same way the current streak does', () => {
+  const logged = ['2026-07-01', '2026-07-02', '2026-07-04', '2026-07-05'];
+  // 3rd absorbed by grace -> one run of 4
+  assert.equal(computeBestStreak(logged), 4);
+});
+
+test('best streak does not bridge a gap of two or more days', () => {
+  const logged = ['2026-07-01', '2026-07-02', '2026-07-05', '2026-07-06'];
+  assert.equal(computeBestStreak(logged), 2);
+});
+
+test('best streak will not spend grace twice inside seven days', () => {
+  const logged = ['2026-07-01', '2026-07-03', '2026-07-05'];
+  // 2nd absorbed -> run of 2; 4th cannot also be absorbed, so the run restarts.
+  assert.equal(computeBestStreak(logged), 2);
+});
+
+test('best streak of an empty log is zero', () => {
+  assert.equal(computeBestStreak([]), 0);
+});
+
+test('best streak counts a single day', () => {
+  assert.equal(computeBestStreak(['2026-07-09']), 1);
+});
+
+test('best streak ignores duplicate entries on one day', () => {
+  assert.equal(computeBestStreak(['2026-07-09', '2026-07-09', '2026-07-10']), 2);
 });

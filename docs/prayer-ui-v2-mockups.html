@@ -1,0 +1,258 @@
+<title>SermonMate — Prayer UI v2</title>
+<style>
+  :root{
+    --paper:#141110;--surface:#1E1A17;--surfaceAlt:#2A2521;--border:#3A332C;
+    --accent:#D9764B;--accentText:#1A1512;--text:#F1EAE0;--textMuted:#A2968A;
+    --sage:#3F4F3B;--sageOn:#7F9370;--sand:#4A4133;--sandOn:#D8CBB0;--charcoal:#2C2621;
+    --onCharcoal:#F1EAE0;--pageBg:#0C0A09;
+  }
+  :root[data-theme="light"]{
+    --paper:#F2EDE4;--surface:#FBF8F2;--surfaceAlt:#EDE6DA;--border:#E2D9CB;
+    --accent:#B0532F;--accentText:#FBF8F2;--text:#2A2420;--textMuted:#7A6E62;
+    --sage:#7F9370;--sageOn:#7F9370;--sand:#D8CBB0;--sandOn:#8a7a5c;--charcoal:#2E2A25;
+    --onCharcoal:#F2EDE4;--pageBg:#E8E1D5;
+  }
+  body{background:var(--pageBg);color:var(--text);margin:0;padding:28px 18px 70px;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-family:ui-serif,Georgia,serif;font-size:1.9rem;margin:0 0 6px}
+  .lede{color:var(--textMuted);max-width:66ch;margin:0 0 26px}
+  h2{font-family:ui-serif,Georgia,serif;font-size:1.2rem;margin:40px 0 4px}
+  h2 .n{color:var(--accent);font-size:.85em;margin-right:.4em}
+  .cap{color:var(--textMuted);margin:0 0 16px;max-width:70ch;font-size:.93rem}
+  .row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px;max-width:320px}
+  .tag{font-size:.72rem;color:var(--textMuted);text-transform:uppercase;letter-spacing:.09em}
+  .note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:11px 13px;font-size:.86rem}
+  .note b{color:var(--accent)}
+  .bad{border-left-color:#B23B2E}
+  .phone{width:300px;border-radius:30px;background:var(--paper);border:1px solid var(--border);
+    box-shadow:0 12px 30px rgba(0,0,0,.3);overflow:hidden;flex:0 0 auto}
+  .status{display:flex;justify-content:space-between;padding:9px 16px 2px;font-size:.68rem;color:var(--textMuted)}
+  .scr{padding:10px 16px 20px;min-height:530px}
+  .hrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .h1s{font-family:ui-serif,Georgia,serif;font-size:1.5rem;line-height:1.3}
+  .link{color:var(--accent);font-size:.78rem;font-weight:600}
+
+  /* streak card */
+  .streak{background:var(--charcoal);border-radius:20px;padding:16px}
+  .snum{font-family:ui-serif,Georgia,serif;font-size:2.4rem;line-height:1.15;color:var(--onCharcoal)}
+  .slab{color:var(--onCharcoal);opacity:.75;font-size:.8rem}
+  .week{display:flex;gap:5px;margin-top:14px}
+  .wd{flex:1;text-align:center}
+  .wdl{font-size:.62rem;color:var(--onCharcoal);opacity:.6;margin-bottom:5px}
+  .wdd{aspect-ratio:1;border-radius:8px;background:rgba(255,255,255,.10);display:grid;place-items:center;
+    font-size:.64rem;color:var(--onCharcoal)}
+  .wdd.full{background:var(--sageOn);color:#10140f}
+  .wdd.some{background:var(--sandOn);color:#241f16}
+  .wdd.grace{background:var(--sandOn);color:#241f16;outline:1.5px dashed var(--accent);outline-offset:-2px}
+  .wdd.today{box-shadow:0 0 0 1.5px var(--accent)}
+
+  /* slots */
+  .lbl{font-size:.7rem;color:var(--textMuted);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 8px}
+  .slot{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;padding:13px 14px;margin-bottom:8px}
+  .slot.next{border-color:var(--accent)}
+  .tick{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:grid;place-items:center;
+    font-size:.75rem;color:transparent;flex:0 0 auto}
+  .tick.done{background:var(--sageOn);border-color:var(--sageOn);color:#10140f}
+  .tick.next{border-color:var(--accent);border-style:dashed}
+  .sm{flex:1;min-width:0}
+  .sn{font-weight:600;font-size:.92rem}
+  .ss{color:var(--textMuted);font-size:.76rem}
+  .snote{color:var(--textMuted);font-size:.73rem;font-style:italic}
+  .chip{font-size:.72rem;color:var(--textMuted);background:var(--surfaceAlt);border-radius:999px;padding:4px 9px}
+
+  .btn{display:block;width:100%;text-align:center;border-radius:14px;padding:12px;font-size:.87rem;font-weight:600;
+    background:var(--accent);color:var(--accentText);border:none;margin-top:12px}
+  .btn.sec{background:transparent;color:var(--accent);border:1px solid var(--border)}
+  .btn.quiet{background:transparent;color:var(--textMuted);border:none}
+
+  /* date strip (option B) */
+  .strip{display:flex;gap:5px;margin-bottom:16px}
+  .sd{flex:1;text-align:center;border-radius:12px;padding:7px 0;background:var(--surface);border:1px solid var(--border)}
+  .sd .l{font-size:.6rem;color:var(--textMuted)}
+  .sd .d{font-size:.86rem;font-weight:600;margin-top:2px}
+  .sd.on{background:var(--accent);border-color:var(--accent)}
+  .sd.on .l,.sd.on .d{color:var(--accentText)}
+  .sd .pip{width:4px;height:4px;border-radius:50%;background:var(--sageOn);margin:3px auto 0}
+  .sd.on .pip{background:var(--accentText)}
+  .sd .pip.none{background:transparent}
+
+  /* history */
+  .mnav{display:flex;align-items:center;justify-content:space-between;margin:6px 0 14px}
+  .mname{font-weight:600;font-size:.92rem}
+  .arrow{color:var(--textMuted);font-size:1rem;padding:4px 8px}
+  .stats{display:flex;gap:8px;margin-bottom:16px}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:11px 8px;text-align:center}
+  .stat .v{font-family:ui-serif,Georgia,serif;font-size:1.35rem;line-height:1.2}
+  .stat .k{font-size:.64rem;color:var(--textMuted);margin-top:2px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .ch{font-size:.6rem;color:var(--textMuted);text-align:center;padding-bottom:5px}
+  .cd{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:.7rem;color:var(--textMuted);border-radius:9px}
+  .cd .dot{width:5px;height:5px;border-radius:50%;margin-top:3px}
+  .cd .dot.full{background:var(--sageOn)}
+  .cd .dot.some{background:var(--sandOn)}
+  .cd .dot.grace{background:transparent;border:1px solid var(--accent)}
+  .cd.today{background:var(--surfaceAlt);color:var(--text);font-weight:600}
+  .legend{display:flex;gap:14px;margin-top:14px;font-size:.68rem;color:var(--textMuted);flex-wrap:wrap}
+  .legend i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+  .ncard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:11px 13px;margin-bottom:7px}
+  .nd{font-size:.68rem;color:var(--textMuted)}
+  .nb{font-size:.83rem;margin-top:2px}
+  .toggle{position:fixed;top:12px;right:12px;background:var(--surface);color:var(--text);border:1px solid var(--border);
+    border-radius:999px;padding:7px 14px;font-size:.8rem;cursor:pointer;z-index:9}
+  @media(max-width:700px){.phone{width:100%;max-width:330px}}
+</style>
+
+<button class="toggle" onclick="var r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='light'?'dark':'light')">Toggle theme</button>
+
+<div class="wrap">
+<h1>Prayer UI — round two</h1>
+<p class="lede">Two directions for the prayer screen plus a rebuilt history screen. Real <code>lib/theme.ts</code> colours, dark by default (toggle top-right). Nothing is built yet — pick a direction and I'll implement it.</p>
+
+<h2><span class="n">0</span>What was wrong</h2>
+<div class="row">
+  <div class="col" style="max-width:640px">
+    <div class="note bad"><b>The week strip was a rolling 7-day window ending today</b> — so it read T F S S M T W. Every letter was correct and the whole thing was unreadable, because a week that starts on a different day each time you open it isn't a week. Your Mood card already uses a fixed Sun–Sat calendar week. Two different week metaphors in one app is the actual bug.</div>
+    <div class="note bad"><b>History was a bare grid.</b> No month navigation, no totals, nothing to feel. The Mood Calendar next door has month nav and a statistics row — prayer history had less than the feature it sits beside.</div>
+  </div>
+</div>
+
+<h2><span class="n">A</span>Direction A — consistent with SermonMate</h2>
+<p class="cap">Fixed Sun–Sat week, matching the Mood card exactly. Today is ringed. Reuses patterns already in the app, so it feels native to SermonMate rather than imported.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮</span></div>
+    <div class="scr">
+      <div class="hrow"><div class="h1s">Prayer times</div><span class="link">History ›</span></div>
+
+      <div class="streak">
+        <div class="snum">12</div>
+        <div class="slab">day streak</div>
+        <div class="week">
+          <div class="wd"><div class="wdl">Sun</div><div class="wdd full">✓</div></div>
+          <div class="wd"><div class="wdl">Mon</div><div class="wdd full">✓</div></div>
+          <div class="wd"><div class="wdl">Tue</div><div class="wdd grace"></div></div>
+          <div class="wd"><div class="wdl">Wed</div><div class="wdd some">✓</div></div>
+          <div class="wd"><div class="wdl">Thu</div><div class="wdd full today">✓</div></div>
+          <div class="wd"><div class="wdl">Fri</div><div class="wdd"></div></div>
+          <div class="wd"><div class="wdl">Sat</div><div class="wdd"></div></div>
+        </div>
+      </div>
+
+      <div class="lbl">Today · 2 of 3</div>
+
+      <div class="slot"><div class="tick done">✓</div><div class="sm"><div class="sn">Morning</div><div class="ss">6:30 · prayed 6:41</div><div class="snote">for mum's health</div></div></div>
+      <div class="slot next"><div class="tick next"></div><div class="sm"><div class="sn">Midday</div><div class="ss">1:00 PM · now</div></div><span class="chip">Log</span></div>
+      <div class="slot"><div class="tick"></div><div class="sm"><div class="sn">Evening</div><div class="ss">9:00 PM</div></div></div>
+
+      <button class="btn sec">I prayed just now</button>
+      <button class="btn quiet">+ Add a prayer time</button>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Why this</span>
+    <div class="note"><b>Sun–Sat, always.</b> The same week your Mood card shows, so both cards agree and neither needs explaining.</div>
+    <div class="note"><b>"Today · 2 of 3"</b> as a section label does the counting, so the slot rows stay quiet.</div>
+    <div class="note">Grace day (Tue) is sand with a dashed accent ring — visibly different from both prayed and missed, without reading as failure.</div>
+  </div>
+</div>
+
+<h2><span class="n">B</span>Direction B — routine tracker</h2>
+<p class="cap">Closer to the inspiration you sent: a date strip with real dates, per-slot streaks, and time as a right-aligned chip. More product, less journal.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮</span></div>
+    <div class="scr">
+      <div class="hrow"><div><div class="h1s">Prayer times</div><div class="ss">Wednesday, 29 July</div></div><span class="link">History ›</span></div>
+
+      <div class="strip">
+        <div class="sd"><div class="l">Sun</div><div class="d">26</div><div class="pip"></div></div>
+        <div class="sd"><div class="l">Mon</div><div class="d">27</div><div class="pip"></div></div>
+        <div class="sd"><div class="l">Tue</div><div class="d">28</div><div class="pip none"></div></div>
+        <div class="sd on"><div class="l">Wed</div><div class="d">29</div><div class="pip"></div></div>
+        <div class="sd"><div class="l">Thu</div><div class="d">30</div><div class="pip none"></div></div>
+        <div class="sd"><div class="l">Fri</div><div class="d">31</div><div class="pip none"></div></div>
+        <div class="sd"><div class="l">Sat</div><div class="d">1</div><div class="pip none"></div></div>
+      </div>
+
+      <div class="streak" style="padding:13px 15px;display:flex;align-items:center;justify-content:space-between">
+        <div><div class="snum" style="font-size:1.7rem">12</div><div class="slab">day streak</div></div>
+        <div class="slab" style="text-align:right;max-width:52%">One grace day used this week</div>
+      </div>
+
+      <div class="lbl">Today</div>
+      <div class="slot"><div class="tick done">✓</div><div class="sm"><div class="sn">Morning</div><div class="ss">Streak 12 days</div></div><span class="chip">6:30</span></div>
+      <div class="slot next"><div class="tick next"></div><div class="sm"><div class="sn">Midday</div><div class="ss">Streak 4 days</div></div><span class="chip">1:00 PM</span></div>
+      <div class="slot"><div class="tick"></div><div class="sm"><div class="sn">Evening</div><div class="ss">Streak 9 days</div></div><span class="chip">9:00 PM</span></div>
+
+      <button class="btn sec">I prayed just now</button>
+      <button class="btn quiet">+ Add a prayer time</button>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Why this</span>
+    <div class="note"><b>Real dates, not just letters.</b> Removes the ambiguity entirely — 29 is unmistakable in a way "W" is not.</div>
+    <div class="note"><b>Per-slot streaks</b> are the strongest idea here: "Morning, streak 12 days" is more motivating than one global number, and it surfaces which habit is actually sticking.</div>
+    <div class="note bad"><b>Cost:</b> per-slot streaks mean more computation, and a slot you delete and recreate loses its streak. It also nudges the app toward productivity-tool territory, away from the quiet companion framing you locked in.</div>
+  </div>
+</div>
+
+<h2><span class="n">C</span>History — rebuilt</h2>
+<p class="cap">Month navigation and a statistics row, mirroring the Mood Calendar so the two screens are siblings. Calendar uses day numbers with a dot beneath — the same language the Mood Calendar already speaks — instead of filled blocks.</p>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>▮▮▮</span></div>
+    <div class="scr">
+      <div class="ss" style="margin-bottom:6px">‹ Prayer times</div>
+      <div class="h1s">Your prayer life</div>
+
+      <div class="mnav"><span class="arrow">‹</span><span class="mname">July 2026</span><span class="arrow">›</span></div>
+
+      <div class="stats">
+        <div class="stat"><div class="v">12</div><div class="k">Current streak</div></div>
+        <div class="stat"><div class="v">21</div><div class="k">Best streak</div></div>
+        <div class="stat"><div class="v">54</div><div class="k">Prayers</div></div>
+      </div>
+
+      <div class="cal">
+        <div class="ch">S</div><div class="ch">M</div><div class="ch">T</div><div class="ch">W</div><div class="ch">T</div><div class="ch">F</div><div class="ch">S</div>
+        <div class="cd"></div><div class="cd"></div><div class="cd"></div>
+        <div class="cd">1<div class="dot full"></div></div><div class="cd">2<div class="dot full"></div></div><div class="cd">3<div class="dot some"></div></div><div class="cd">4<div class="dot full"></div></div>
+        <div class="cd">5<div class="dot full"></div></div><div class="cd">6<div class="dot"></div></div><div class="cd">7<div class="dot some"></div></div><div class="cd">8<div class="dot full"></div></div><div class="cd">9<div class="dot full"></div></div><div class="cd">10<div class="dot full"></div></div><div class="cd">11<div class="dot grace"></div></div>
+        <div class="cd">12<div class="dot full"></div></div><div class="cd">13<div class="dot full"></div></div><div class="cd">14<div class="dot some"></div></div><div class="cd">15<div class="dot full"></div></div><div class="cd">16<div class="dot full"></div></div><div class="cd">17<div class="dot full"></div></div><div class="cd">18<div class="dot full"></div></div>
+        <div class="cd">19<div class="dot some"></div></div><div class="cd">20<div class="dot full"></div></div><div class="cd">21<div class="dot full"></div></div><div class="cd">22<div class="dot full"></div></div><div class="cd">23<div class="dot full"></div></div><div class="cd">24<div class="dot full"></div></div><div class="cd">25<div class="dot full"></div></div>
+        <div class="cd">26<div class="dot full"></div></div><div class="cd">27<div class="dot full"></div></div><div class="cd">28<div class="dot some"></div></div><div class="cd today">29<div class="dot full"></div></div><div class="cd">30<div class="dot"></div></div><div class="cd">31<div class="dot"></div></div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:var(--sageOn)"></i>every time</span>
+        <span><i style="background:var(--sandOn)"></i>some</span>
+        <span><i style="border:1px solid var(--accent)"></i>grace</span>
+      </div>
+
+      <div class="lbl">Recent notes</div>
+      <div class="ncard"><div class="nd">28 Jul · Morning</div><div class="nb">for mum's health</div></div>
+      <div class="ncard"><div class="nd">24 Jul · Evening</div><div class="nb">thanksgiving — the results came back clear</div></div>
+    </div>
+  </div>
+  <div class="col">
+    <span class="tag">Why this</span>
+    <div class="note"><b>Dots under numbers</b> instead of filled blocks — exactly what your Mood Calendar does. The two history screens become siblings instead of strangers.</div>
+    <div class="note"><b>Best streak</b> is the number that keeps people going after a break. Current streak alone punishes a fresh start; "best 21" says the 21 still happened.</div>
+    <div class="note"><b>Month navigation</b> makes the past reachable. Without it the screen only ever shows now, which is the opposite of a history.</div>
+    <div class="note">Missed days stay blank. No red anywhere on this screen.</div>
+  </div>
+</div>
+
+<h2>My recommendation</h2>
+<div class="row">
+  <div class="note" style="max-width:none">
+    <b>Direction A for the prayer screen, plus C for history.</b> A costs nothing new and makes the two week-strips in your app agree, which is the actual complaint. B is the better-looking screen in isolation, but per-slot streaks add real state and pull the product toward habit-tracker rather than companion — and the date strip duplicates what history is for.<br><br>
+    If you want one thing from B, take the <b>date numbers in the week strip</b> (Sun 26, Mon 27 …) instead of bare letters. That kills the ambiguity for free and does not change any data.
+  </div>
+</div>
+</div>

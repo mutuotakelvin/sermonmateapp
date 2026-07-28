@@ -70,3 +70,43 @@ export function computeStreak(loggedDates: string[], today: string): StreakResul
 
   return { current, graceDates };
 }
+
+/**
+ * The longest run the user has ever managed, under the same grace rule as
+ * `computeStreak`. Shown alongside the current streak because current-only
+ * punishes a fresh start: after a break it reads as though the good months never
+ * happened.
+ *
+ * Walks forward through the distinct logged days rather than backward from
+ * today, since "best" has no anchor date.
+ */
+export function computeBestStreak(loggedDates: string[]): number {
+  const days = [...new Set(loggedDates)].sort();
+  if (days.length === 0) return 0;
+
+  let best = 1;
+  let run = 1;
+  let lastAbsorbed: string | null = null;
+
+  for (let i = 1; i < days.length; i += 1) {
+    const gap = daysBetween(days[i - 1], days[i]);
+
+    if (gap === 1) {
+      run += 1;
+    } else if (
+      // One missing day can be bridged, and only if grace is not already spent
+      // inside the window.
+      gap === 2
+      && (lastAbsorbed === null || daysBetween(days[i], lastAbsorbed) >= GRACE_WINDOW_DAYS)
+    ) {
+      lastAbsorbed = addDays(days[i], -1);
+      run += 1;
+    } else {
+      run = 1;
+    }
+
+    if (run > best) best = run;
+  }
+
+  return best;
+}

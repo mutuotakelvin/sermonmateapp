@@ -48,6 +48,7 @@ export default function PrayerScreen() {
   const today = localDateKey(new Date());
   const todayEntries = log.filter((entry) => entry.localDate === today);
   const ordered = [...slots].sort((a, b) => minutesOfDay(a) - minutesOfDay(b));
+  const enabledCount = ordered.filter((slot) => slot.enabled).length;
 
   // The enabled slot nearest to now that hasn't been logged — a quiet "you're up",
   // never a nag.
@@ -116,15 +117,20 @@ export default function PrayerScreen() {
     id: `slot-${Date.now()}`, label: 'Prayer', hour: 12, minute: 0, enabled: true,
   });
 
-  // Seven day dots ending today.
-  const weekDots = Array.from({ length: 7 }).map((_, index) => {
+  // The CALENDAR week, Sunday to Saturday — the same week the Mood card shows.
+  // A rolling seven days ending today starts on a different weekday every day,
+  // which is why the old strip read "T F S S M T W" and meant nothing.
+  const weekDays = Array.from({ length: 7 }).map((_, index) => {
     const date = new Date();
-    date.setDate(date.getDate() - (6 - index));
+    date.setDate(date.getDate() - date.getDay() + index);
     const key = localDateKey(date);
+    const count = log.filter((entry) => entry.localDate === key).length;
     return {
       key,
-      letter: WEEKDAYS[date.getDay()],
-      prayed: log.some((entry) => entry.localDate === key),
+      letter: WEEKDAYS[index],
+      dayOfMonth: date.getDate(),
+      prayed: count > 0,
+      full: enabledCount > 0 && count >= enabledCount,
       grace: streak.graceDates.includes(key),
       isToday: key === today,
     };
@@ -147,17 +153,20 @@ export default function PrayerScreen() {
             {streak.current === 1 ? 'day of prayer' : 'days of prayer'}
           </AppText>
           <View style={styles.dots}>
-            {weekDots.map((day) => (
-              <View
-                key={day.key}
-                style={[
-                  styles.dot,
-                  day.prayed && styles.dotFull,
-                  day.grace && styles.dotGrace,
-                  day.isToday && styles.dotToday,
-                ]}
-              >
-                <AppText variant="caption" style={styles.dotText}>{day.letter}</AppText>
+            {weekDays.map((day) => (
+              <View key={day.key} style={styles.dayCol}>
+                <AppText variant="caption" style={styles.dayLetter}>{day.letter}</AppText>
+                <View
+                  style={[
+                    styles.dot,
+                    day.prayed && styles.dotSome,
+                    day.full && styles.dotFull,
+                    day.grace && styles.dotGrace,
+                    day.isToday && styles.dotToday,
+                  ]}
+                >
+                  <AppText variant="caption" style={styles.dotText}>{day.dayOfMonth}</AppText>
+                </View>
               </View>
             ))}
           </View>
@@ -180,6 +189,14 @@ export default function PrayerScreen() {
               evening, or whatever fits your day.
             </AppText>
           </View>
+        )}
+
+        {ordered.length > 0 && (
+          <AppText variant="label" style={styles.sectionLabel}>
+            {enabledCount > 0
+              ? `Today · ${todayEntries.filter((e) => e.slotId).length} of ${enabledCount}`
+              : 'Today'}
+          </AppText>
         )}
 
         {ordered.map((slot) => {
@@ -354,19 +371,28 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
   },
   streakLabel: { color: theme.color.onCharcoal, opacity: 0.8 },
   dots: { flexDirection: 'row', gap: theme.space.xs, marginTop: theme.space.lg },
+  dayCol: { flex: 1, alignItems: 'stretch' },
+  dayLetter: {
+    color: theme.color.onCharcoal,
+    opacity: 0.6,
+    fontSize: 10,
+    lineHeight: 13,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
   dot: {
-    flex: 1,
     aspectRatio: 1,
-    maxWidth: 34,
     borderRadius: theme.radius.sm,
     backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  dotSome: { backgroundColor: theme.color.sand },
   dotFull: { backgroundColor: theme.color.sage },
-  dotGrace: { backgroundColor: theme.color.sand },
+  dotGrace: { backgroundColor: theme.color.sand, borderWidth: 1, borderColor: theme.color.accent },
   dotToday: { borderWidth: 1.5, borderColor: theme.color.accent },
   dotText: { color: theme.color.onCharcoal, fontSize: 11, lineHeight: 14 },
+  sectionLabel: { color: theme.color.textMuted, marginBottom: theme.space.sm },
   warning: {
     backgroundColor: theme.color.surfaceAlt,
     borderRadius: theme.radius.md,
