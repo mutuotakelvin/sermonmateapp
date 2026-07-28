@@ -15,8 +15,27 @@ const RC_ENTITLEMENT = "sermonmate Pro";
 
 if (!getApps().length) initializeApp();
 
-const FREE_DAILY_LIMIT = 1;
-const PRO_DAILY_LIMIT = 50;
+// Daily caps per quota kind. "generation" is a full reflection; "followUp" is a
+// story or prayer riffing on one the user already has.
+//
+// Pro is capped rather than unlimited because generations cost real Anthropic
+// spend: at the Kenyan price the plan nets ~$2.26/month, and a reflection runs
+// ~$0.01, so an uncapped heavy user costs more than they pay. 12/day is well
+// beyond a daily-devotional habit while keeping the margin positive. Follow-ups
+// use half the max_tokens, so they get a looser cap on their own counter.
+type QuotaKind = "generation" | "followUp";
+
+const DAILY_LIMITS: Record<QuotaKind, { free: number; pro: number }> = {
+  generation: { free: 1, pro: 12 },
+  followUp: { free: 4, pro: 30 },
+};
+
+// Field in usage/{uid} backing each kind. Generations keep the original "count"
+// field so live counters keep their meaning across this deploy.
+const USAGE_FIELD: Record<QuotaKind, string> = {
+  generation: "count",
+  followUp: "followUpCount",
+};
 
 function utcDay(): string {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
@@ -24,36 +43,46 @@ function utcDay(): string {
 
 // Atomically enforce + reserve one AI generation for the day. Throws
 // resource-exhausted when over the caller's limit (free vs Pro).
-async function enforceAiQuota(uid: string): Promise<void> {
+async function enforceAiQuota(uid: string, kind: QuotaKind = "generation"): Promise<void> {
   const db = getFirestore();
   const day = utcDay();
   const userRef = db.doc(`users/${uid}`);
   const usageRef = db.doc(`usage/${uid}`);
+  const field = USAGE_FIELD[kind];
   await db.runTransaction(async (tx) => {
     const [userSnap, usageSnap] = await Promise.all([tx.get(userRef), tx.get(usageRef)]);
     const isPro = userSnap.exists && userSnap.get("pro") === true;
-    const limit = isPro ? PRO_DAILY_LIMIT : FREE_DAILY_LIMIT;
+    const limit = isPro ? DAILY_LIMITS[kind].pro : DAILY_LIMITS[kind].free;
     const data = usageSnap.exists ? usageSnap.data() ?? {} : {};
-    const count = data.day === day ? (data.count ?? 0) : 0;
+    const sameDay = data.day === day;
+    const count = sameDay ? (data[field] ?? 0) : 0;
     if (count >= limit) {
+      // Follow-up limits surface straight to the user as a message, so they get
+      // their own code rather than reusing the paywall-triggering ones.
+      if (kind === "followUp") {
+        throw new HttpsError("resource-exhausted", "FOLLOW_UP_LIMIT_REACHED");
+      }
       throw new HttpsError("resource-exhausted", isPro ? "PRO_SOFT_LIMIT" : "FREE_LIMIT_REACHED");
     }
-    tx.set(usageRef, { day, count: count + 1 }, { merge: true });
+    // Rolling onto a new day resets every counter, not just the one being spent.
+    const next = sameDay ? { [field]: count + 1 } : { count: 0, followUpCount: 0, [field]: 1 };
+    tx.set(usageRef, { day, ...next }, { merge: true });
   });
 }
 
 // Best-effort: give back the reserved unit when the Claude call fails.
-async function refundAiQuota(uid: string): Promise<void> {
+async function refundAiQuota(uid: string, kind: QuotaKind = "generation"): Promise<void> {
   try {
     const db = getFirestore();
     const day = utcDay();
     const ref = db.doc(`usage/${uid}`);
+    const field = USAGE_FIELD[kind];
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists) return;
       const data = snap.data() ?? {};
-      if (data.day === day && (data.count ?? 0) > 0) {
-        tx.update(ref, { count: data.count - 1 });
+      if (data.day === day && (data[field] ?? 0) > 0) {
+        tx.update(ref, { [field]: data[field] - 1 });
       }
     });
   } catch (err) {
@@ -202,6 +231,23 @@ function requireAuth(request: CallableRequest): void {
   }
 }
 
+// Follow-ups take the reflection text back from the client, which makes it the
+// one part of these prompts a caller fully controls. Cap it: an unbounded string
+// is an unbounded Anthropic bill, and a long one is room to smuggle in
+// instructions of the caller's own.
+const MAX_CONTEXT_CHARS = 2000;
+
+function readContext(request: CallableRequest): string {
+  const context = String(request.data?.context ?? "").trim();
+  if (!context) {
+    throw new HttpsError("invalid-argument", "Context is required.");
+  }
+  if (context.length > MAX_CONTEXT_CHARS) {
+    throw new HttpsError("invalid-argument", "That reflection is too long to work from.");
+  }
+  return context;
+}
+
 export const generateSermon = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
   async (request) => {
@@ -249,37 +295,48 @@ export const generateMoodSermon = onCall(
   }
 );
 
-// Quota-free follow-up: a short story illustrating a reflection the user already generated.
+// Follow-up: a short story illustrating a reflection the user already generated.
+// Metered on its own looser counter so asking for a story never eats the day's
+// reflection.
 export const generateStory = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
   async (request) => {
     requireAuth(request);
-    const context = String(request.data?.context ?? "").trim();
-    if (!context) {
-      throw new HttpsError("invalid-argument", "Context is required.");
+    const uid = request.auth!.uid;
+    const context = readContext(request);
+    await enforceAiQuota(uid, "followUp");
+    try {
+      const story = await generateText(
+        STORY_SYSTEM_PROMPT,
+        `Reflection: "${context}". Write a short story that illustrates it.`
+      );
+      return { story };
+    } catch (err) {
+      await refundAiQuota(uid, "followUp");
+      throw err;
     }
-    const story = await generateText(
-      STORY_SYSTEM_PROMPT,
-      `Reflection: "${context}". Write a short story that illustrates it.`
-    );
-    return { story };
   }
 );
 
-// Quota-free follow-up: a short prayer responding to a reflection the user already generated.
+// Follow-up: a short prayer responding to a reflection the user already
+// generated. Shares the follow-up counter with generateStory.
 export const generatePrayer = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
   async (request) => {
     requireAuth(request);
-    const context = String(request.data?.context ?? "").trim();
-    if (!context) {
-      throw new HttpsError("invalid-argument", "Context is required.");
+    const uid = request.auth!.uid;
+    const context = readContext(request);
+    await enforceAiQuota(uid, "followUp");
+    try {
+      const prayer = await generateText(
+        PRAYER_SYSTEM_PROMPT,
+        `Reflection: "${context}". Write a short prayer responding to it.`
+      );
+      return { prayer };
+    } catch (err) {
+      await refundAiQuota(uid, "followUp");
+      throw err;
     }
-    const prayer = await generateText(
-      PRAYER_SYSTEM_PROMPT,
-      `Reflection: "${context}". Write a short prayer responding to it.`
-    );
-    return { prayer };
   }
 );
 

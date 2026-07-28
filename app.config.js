@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "SermonMate",
     slug: "sermonmate",
-    version: "1.3.0",
+    version: "1.3.1",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "sermonmate",
@@ -21,7 +21,7 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.sermonmate.app",
-      versionCode: 17,
+      versionCode: 18,
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
@@ -83,7 +83,10 @@ export default {
       "@react-native-google-signin/google-signin",
       // Supplies canScheduleExactAlarms() + openSettings('alarms'); expo-notifications
       // exposes no JS API for exact-alarm state.
-      "react-native-permissions"
+      "react-native-permissions",
+      // MainActivity launchMode singleTask -> singleTop, which Play Billing
+      // requires to survive the app being backgrounded for payment (M-Pesa PIN).
+      "./plugins/withPurchasesLaunchMode"
     ],
     experiments: {
       typedRoutes: true

@@ -18,8 +18,13 @@ export class AiLimitError extends Error {
   }
 }
 
-function toAiError(error: any): Error {
+export function toAiError(error: any): Error {
   if (error?.code === 'functions/resource-exhausted') {
+    // Follow-ups are metered separately and shown as a plain message — they must
+    // not raise AiLimitError, which callers treat as a cue to open the paywall.
+    if (error?.message === 'FOLLOW_UP_LIMIT_REACHED') {
+      return new Error("You've used today's stories and prayers. They reset tomorrow.");
+    }
     return new AiLimitError(error?.message === 'PRO_SOFT_LIMIT' ? 'pro' : 'free');
   }
   return new Error(error?.message || 'Failed to generate. Please try again.');
@@ -66,8 +71,8 @@ export async function generateMoodSermon(
 }
 
 /**
- * Generate a short story illustrating a reflection. Quota-free follow-up —
- * calls the `generateStory` Cloud Function.
+ * Generate a short story illustrating a reflection. Metered on the shared
+ * follow-up quota — calls the `generateStory` Cloud Function.
  */
 export async function generateStory(context: string): Promise<string> {
   const callable = httpsCallable<{ context: string }, { story: string }>(functions, 'generateStory');
