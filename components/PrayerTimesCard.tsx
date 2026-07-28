@@ -84,7 +84,10 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
     borderColor: theme.color.border,
     borderRadius: theme.radius.md,
     padding: theme.space.lg,
-    marginBottom: theme.space.lg,
+    // Home spaces cards with marginTop only (see generateCard/moodPromptCard);
+    // a bottom margin here double-spaced the section below and pinched this one.
+    marginTop: theme.space.lg,
+    minHeight: 64,
   },
   main: { flex: 1 },
   title: { fontFamily: theme.font.sansSemibold },

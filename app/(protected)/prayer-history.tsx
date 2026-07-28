@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import AppText from '@/components/ui/AppText';
 import Screen from '@/components/ui/Screen';
@@ -13,6 +14,7 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export default function PrayerHistoryScreen() {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const router = useRouter();
   const { log, slots, streak, load } = usePrayerStore();
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -35,7 +37,18 @@ export default function PrayerHistoryScreen() {
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.back}
+          android_ripple={{ color: theme.color.border, borderless: true }}
+          accessibilityRole="button"
+          accessibilityLabel="Back to prayer times"
+        >
+          <Ionicons name="chevron-back" size={20} color={theme.color.accent} />
+          <AppText variant="label" style={styles.link}>Prayer times</AppText>
+        </Pressable>
+
         <AppText variant="title" style={styles.h1}>Your prayer life</AppText>
         <AppText variant="caption" style={styles.sub}>{monthLabel}</AppText>
 
@@ -52,20 +65,22 @@ export default function PrayerHistoryScreen() {
             const full = enabledCount > 0 && count >= enabledCount;
             const some = count > 0 && !full;
             const grace = streak.graceDates.includes(key);
+            const isToday = key === localDateKey(now);
             return (
-              <View
-                key={key}
-                style={[
-                  styles.cell,
-                  styles.cellFilled,
-                  some && styles.cellSome,
-                  full && styles.cellFull,
-                  grace && styles.cellGrace,
-                ]}
-              >
-                <AppText variant="caption" style={[styles.cellText, full && styles.cellTextOn]}>
-                  {Number(key.slice(-2))}
-                </AppText>
+              <View key={key} style={styles.cell}>
+                <View
+                  style={[
+                    styles.pip,
+                    some && styles.cellSome,
+                    full && styles.cellFull,
+                    grace && styles.cellGrace,
+                    isToday && styles.cellToday,
+                  ]}
+                >
+                  <AppText variant="caption" style={[styles.cellText, full && styles.cellTextOn]}>
+                    {Number(key.slice(-2))}
+                  </AppText>
+                </View>
               </View>
             );
           })}
@@ -73,15 +88,27 @@ export default function PrayerHistoryScreen() {
 
         <View style={styles.legend}>
           <View style={styles.legendItem}>
-            <View style={[styles.swatch, styles.cellFull]} /><AppText variant="caption">all</AppText>
+            <View style={[styles.swatch, styles.cellFull]} />
+            <AppText variant="caption">every time</AppText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.swatch, styles.cellSome]} /><AppText variant="caption">some</AppText>
+            <View style={[styles.swatch, styles.cellSome]} />
+            <AppText variant="caption">some</AppText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.swatch, styles.cellGrace]} /><AppText variant="caption">grace</AppText>
+            <View style={[styles.swatch, styles.cellGrace]} />
+            <AppText variant="caption">grace</AppText>
           </View>
         </View>
+
+        {log.length === 0 && (
+          <View style={styles.empty}>
+            <AppText variant="body" style={styles.emptyTitle}>Nothing logged yet</AppText>
+            <AppText variant="caption">
+              Once you start logging prayers they&apos;ll fill in here, month by month.
+            </AppText>
+          </View>
+        )}
 
         {noted.length > 0 && (
           <>
@@ -102,7 +129,17 @@ export default function PrayerHistoryScreen() {
 }
 
 const makeStyles = (theme: AppTheme) => StyleSheet.create({
-  h1: { fontSize: 26 },
+  scrollContent: { paddingTop: theme.space.lg, paddingBottom: theme.space.xxl },
+  back: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 2,
+    minHeight: 44,
+    marginBottom: theme.space.xs,
+  },
+  link: { color: theme.color.accent },
+  h1: { fontSize: 26, lineHeight: 34 },
   sub: { marginBottom: theme.space.lg },
   weekHeader: { flexDirection: 'row' },
   weekHeaderCell: { flex: 1, textAlign: 'center' },
@@ -112,17 +149,27 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 3,
   },
   // Missed days are simply plain. No red, no failure marks — absence is absence.
-  cellFilled: { borderRadius: theme.radius.sm },
+  pip: {
+    flex: 1,
+    alignSelf: 'stretch',
+    borderRadius: theme.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cellSome: { backgroundColor: theme.color.sand },
   cellFull: { backgroundColor: theme.color.sage },
   cellGrace: { backgroundColor: theme.color.sand, borderWidth: 1, borderColor: theme.color.accent },
+  cellToday: { borderWidth: 1.5, borderColor: theme.color.accent },
   cellText: { color: theme.color.textMuted },
   cellTextOn: { color: theme.color.accentText },
-  legend: { flexDirection: 'row', gap: theme.space.lg, marginTop: theme.space.md },
+  legend: { flexDirection: 'row', gap: theme.space.lg, marginTop: theme.space.lg },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   swatch: { width: 10, height: 10, borderRadius: 3 },
+  empty: { paddingVertical: theme.space.xl, gap: theme.space.xs },
+  emptyTitle: { fontFamily: theme.font.sansSemibold },
   section: { marginTop: theme.space.xl, marginBottom: theme.space.sm },
   noteCard: {
     backgroundColor: theme.color.surface,

@@ -126,12 +126,13 @@ export default function PrayerScreen() {
       letter: WEEKDAYS[date.getDay()],
       prayed: log.some((entry) => entry.localDate === key),
       grace: streak.graceDates.includes(key),
+      isToday: key === today,
     };
   });
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <AppText variant="title" style={styles.h1}>Prayer times</AppText>
           <Pressable onPress={() => router.push('/prayer-history')} style={styles.historyLink}>
@@ -146,16 +147,17 @@ export default function PrayerScreen() {
             {streak.current === 1 ? 'day of prayer' : 'days of prayer'}
           </AppText>
           <View style={styles.dots}>
-            {weekDots.map((day, index) => (
+            {weekDots.map((day) => (
               <View
                 key={day.key}
                 style={[
                   styles.dot,
                   day.prayed && styles.dotFull,
                   day.grace && styles.dotGrace,
+                  day.isToday && styles.dotToday,
                 ]}
               >
-                <AppText variant="caption" style={styles.dotText}>{WEEKDAYS[index] && day.letter}</AppText>
+                <AppText variant="caption" style={styles.dotText}>{day.letter}</AppText>
               </View>
             ))}
           </View>
@@ -171,9 +173,13 @@ export default function PrayerScreen() {
         )}
 
         {ordered.length === 0 && (
-          <AppText variant="caption" style={styles.empty}>
-            No prayer times yet. Add one and we&apos;ll remind you.
-          </AppText>
+          <View style={styles.empty}>
+            <AppText variant="body" style={styles.emptyTitle}>No prayer times yet</AppText>
+            <AppText variant="caption">
+              Set the times you want to pray and we&apos;ll remind you — morning, midday,
+              evening, or whatever fits your day.
+            </AppText>
+          </View>
         )}
 
         {ordered.map((slot) => {
@@ -194,12 +200,42 @@ export default function PrayerScreen() {
           );
         })}
 
-        <PrimaryButton label="I prayed just now" onPress={() => handleLog(null)} style={styles.adhoc} />
-
-        <Pressable onPress={addSlot} style={styles.add}>
-          <Ionicons name="add" size={16} color={theme.color.accent} />
-          <AppText variant="label" style={styles.link}>Add a prayer time</AppText>
-        </Pressable>
+        {/* With no slots set up, adding one is the real next step — logging an
+            ad-hoc prayer is the secondary path, so the emphasis flips. */}
+        {ordered.length === 0 ? (
+          <>
+            <PrimaryButton label="Add a prayer time" onPress={addSlot} style={styles.primaryAction} />
+            <Pressable
+              onPress={() => handleLog(null)}
+              style={styles.secondaryAction}
+              android_ripple={{ color: theme.color.border }}
+              accessibilityRole="button"
+            >
+              <AppText variant="label" style={styles.link}>I prayed just now</AppText>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Pressable
+              onPress={() => handleLog(null)}
+              style={styles.secondaryAction}
+              android_ripple={{ color: theme.color.border }}
+              accessibilityRole="button"
+            >
+              <Ionicons name="checkmark-circle-outline" size={17} color={theme.color.accent} />
+              <AppText variant="label" style={styles.link}>I prayed just now</AppText>
+            </Pressable>
+            <Pressable
+              onPress={addSlot}
+              style={styles.addRow}
+              android_ripple={{ color: theme.color.border }}
+              accessibilityRole="button"
+            >
+              <Ionicons name="add" size={16} color={theme.color.textMuted} />
+              <AppText variant="label" style={styles.addText}>Add a prayer time</AppText>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
 
       <PrayerLogSheet
@@ -284,36 +320,86 @@ export default function PrayerScreen() {
 }
 
 const makeStyles = (theme: AppTheme) => StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md },
-  h1: { fontSize: 26 },
-  historyLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  // Vertical rhythm: space.lg between blocks, space.sm inside them. Matches home.
+  scrollContent: { paddingTop: theme.space.lg, paddingBottom: theme.space.xxl },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.space.lg,
+  },
+  h1: { fontSize: 26, lineHeight: 34 },
+  historyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    // 44px touch target without visually enlarging the link.
+    paddingVertical: theme.space.sm,
+    paddingLeft: theme.space.sm,
+  },
   link: { color: theme.color.accent },
   streak: {
     backgroundColor: theme.color.charcoal,
     borderRadius: theme.radius.lg,
     padding: theme.space.lg,
-    marginBottom: theme.space.md,
+    marginBottom: theme.space.lg,
   },
-  streakNumber: { fontFamily: theme.font.serif, fontSize: 34, color: theme.color.onCharcoal },
+  // lineHeight is not optional here: at 40px the serif numeral was being clipped
+  // to a sliver by the default line box, so "0" rendered as "U".
+  streakNumber: {
+    fontFamily: theme.font.serif,
+    fontSize: 40,
+    lineHeight: 48,
+    color: theme.color.onCharcoal,
+  },
   streakLabel: { color: theme.color.onCharcoal, opacity: 0.8 },
-  dots: { flexDirection: 'row', gap: 6, marginTop: theme.space.md },
+  dots: { flexDirection: 'row', gap: theme.space.xs, marginTop: theme.space.lg },
   dot: {
-    width: 24, height: 24, borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center',
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: 34,
+    borderRadius: theme.radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dotFull: { backgroundColor: theme.color.sage },
   dotGrace: { backgroundColor: theme.color.sand },
-  dotText: { color: theme.color.onCharcoal, fontSize: 10 },
+  dotToday: { borderWidth: 1.5, borderColor: theme.color.accent },
+  dotText: { color: theme.color.onCharcoal, fontSize: 11, lineHeight: 14 },
   warning: {
     backgroundColor: theme.color.surfaceAlt,
     borderRadius: theme.radius.md,
-    padding: theme.space.md,
-    marginBottom: theme.space.md,
-    gap: 6,
+    padding: theme.space.lg,
+    marginBottom: theme.space.lg,
+    gap: theme.space.xs,
   },
-  empty: { marginBottom: theme.space.md },
-  adhoc: { marginTop: theme.space.sm },
-  add: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: theme.space.lg },
+  empty: {
+    paddingVertical: theme.space.xl,
+    gap: theme.space.xs,
+  },
+  emptyTitle: { fontFamily: theme.font.sansSemibold },
+  primaryAction: { marginTop: theme.space.sm },
+  secondaryAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.space.xs,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    borderRadius: theme.radius.md,
+    marginTop: theme.space.sm,
+  },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.space.xs,
+    minHeight: 48,
+    marginTop: theme.space.xs,
+  },
+  addText: { color: theme.color.textMuted },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
     backgroundColor: theme.color.surface,
