@@ -35,6 +35,8 @@ export default function RootLayout() {
   const { initialized, initializeVerseSettings } = useVerseStore();
   const handledResponseId = useRef<string | null>(null);
   const authUserId = useAuthStore((s) => s.user?.id);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const setPro = usePurchasesStore((s) => s.setPro);
   const initializeAppearance = useAppearanceStore((s) => s.initializeAppearance);
   const theme = useTheme();
@@ -133,6 +135,16 @@ export default function RootLayout() {
     const id = lastNotificationResponse?.notification.request.identifier;
     if (!id || id === handledResponseId.current) return;
 
+    // Wait for the session before acting. On a cold start from a notification
+    // this effect runs immediately, while ProtectedLayout is still rendering
+    // null (isLoading) or redirecting to /login — so a push would land in a
+    // navigator that isn't mounted, and the redirect would fight it. That is
+    // what made a tapped prayer reminder open the app and then fail.
+    //
+    // Deliberately does NOT mark the response handled: leaving it pending means
+    // this effect re-runs once auth resolves and the navigation happens then.
+    if (isLoading || !isAuthenticated) return;
+
     const data = lastNotificationResponse?.notification.request.content.data;
     const action = lastNotificationResponse?.actionIdentifier;
     const screen = data?.screen;
@@ -152,7 +164,7 @@ export default function RootLayout() {
       }
       router.push('/(protected)/prayer' as never);
     }
-  }, [lastNotificationResponse, router]);
+  }, [lastNotificationResponse, router, isAuthenticated, isLoading]);
 
   if (!fontsLoaded && !fontError) {
     return null; // splash stays visible
