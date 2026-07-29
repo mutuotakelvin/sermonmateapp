@@ -252,3 +252,34 @@ natural moment to include it.
 - [ ] Check in on a given day; the filled dot on home sits under **that**
       weekday and agrees with the Mood Calendar. Previously the home strip was
       shifted a day because it derived keys via `toISOString()`.
+
+### Generated prayers (added 2026-07-29)
+
+- [ ] Log a prayer, tap "Pray with me", wait for the prayer, tap Amen. Reopen
+      prayer history — the prayer is there. **This is the regression:** before
+      this change Amen discarded it, and the quota spend with it.
+- [ ] The same prayer survives `adb shell am force-stop com.sermonmate.app` and a
+      relaunch, i.e. it came back from Firestore rather than local state.
+- [ ] Copy pastes the prayer plus the SermonMate line. Listen reads it aloud.
+      Share opens the OS sheet with the text.
+- [ ] "Card" opens the card editor with the prayer already in it. Check a LONG
+      prayer (400+ characters): `ShareCard` steps font size down by text length,
+      and a full prayer is the longest text that path has ever been handed.
+- [ ] Tap "Pray with me" on a prayer notification. It opens the app with the
+      sheet already up for that moment, and **no prayer is generated** until the
+      button is tapped — the point is that a notification tap never spends quota.
+- [ ] Aeroplane mode: generating fails with a toast, and no empty or half-written
+      entry is left behind in history.
+
+### Keyboard over input fields (fixed 2026-07-29)
+
+Reported from use and reproduced: the note field's bounds were identical before
+and after the IME appeared, so the whole sheet sat behind the keyboard.
+
+- [ ] Prayer note sheet: with the keyboard up, the input, "Done" and "Pray with
+      me" are all visible and tappable.
+- [ ] Mood check-in, "Or share what's on your heart": same.
+- [ ] Slot edit sheet, the name field: same.
+- [ ] These are bottom-anchored sheets and the app is edge-to-edge on targetSdk
+      36, so the window is NOT resized for the IME — each sheet lifts itself via
+      KeyboardAvoidingView. If one regresses, that is the thing to check.
