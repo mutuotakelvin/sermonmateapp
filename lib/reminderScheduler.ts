@@ -67,8 +67,20 @@ export function ensureChannels(): void {
     importance: Notifications.AndroidImportance.DEFAULT,
   }).catch((error) => console.error('Error creating prayer channel:', error));
 
+  // Both actions open the app.
+  //
+  // "I prayed" was originally opensAppToForeground: false, so it could log from
+  // the lock screen without a visible launch. On Android that requires a
+  // registered background notification task to receive the response — without
+  // one the response has no handler, and it broke the whole notification: the
+  // body tap opened the app and immediately failed too. The daily verse
+  // notification carries no category and was never affected, which is what
+  // pointed at this.
+  //
+  // Opening the app costs one extra beat but the log always lands. Revisit with
+  // registerTaskAsync if lock-screen logging turns out to matter.
   Notifications.setNotificationCategoryAsync(PRAYER_CATEGORY_ID, [
-    { identifier: 'LOG_PRAYER', buttonTitle: 'I prayed', options: { opensAppToForeground: false } },
+    { identifier: 'LOG_PRAYER', buttonTitle: 'I prayed', options: { opensAppToForeground: true } },
     { identifier: 'PRAY_WITH_ME', buttonTitle: 'Pray with me', options: { opensAppToForeground: true } },
   ]).catch((error) => console.error('Error creating prayer category:', error));
 }

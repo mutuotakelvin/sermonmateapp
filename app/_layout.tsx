@@ -125,12 +125,10 @@ export default function RootLayout() {
   // Route notification taps (cold start and background) to the right screen, and
   // handle the prayer reminder's inline actions.
   //
-  // "I prayed" is declared opensAppToForeground: false, so when the app is alive
-  // this logs without a visible launch. When the app was killed there is no JS to
-  // run at tap time — expo-notifications replays the response here on next start,
-  // which is why the write happens from the response rather than from a native
-  // handler. If that replay proves unreliable on device, flip LOG_PRAYER to
-  // opensAppToForeground: true in reminderScheduler.ts and log from the screen.
+  // Both prayer actions open the app (see reminderScheduler.ts for why), so the
+  // write always happens here with JS running. "I prayed" also lands on the
+  // prayer screen afterwards, so the tick is visible confirmation rather than a
+  // silent write the user has to trust.
   useEffect(() => {
     const id = lastNotificationResponse?.notification.request.identifier;
     if (!id || id === handledResponseId.current) return;
@@ -160,7 +158,6 @@ export default function RootLayout() {
       if (action === 'LOG_PRAYER') {
         const slotId = typeof data?.slotId === 'string' ? data.slotId : null;
         usePrayerStore.getState().logPrayer(slotId).catch(() => {});
-        return;
       }
       router.push('/(protected)/prayer' as never);
     }
