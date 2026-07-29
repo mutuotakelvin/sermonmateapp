@@ -8,6 +8,7 @@ import {
   logPrayer as logPrayerRemote,
   savePrayerSlots,
   updatePrayerNote as updateNoteRemote,
+  updatePrayerText as updatePrayerTextRemote,
 } from '@/lib/prayerApi';
 import type { PrayerLogEntry, PrayerSlot } from '@/lib/types';
 
@@ -24,6 +25,7 @@ interface PrayerState {
   setSlots: (slots: PrayerSlot[]) => Promise<void>;
   logPrayer: (slotId: string | null, note?: string) => Promise<PrayerLogEntry | null>;
   setNote: (entryId: string, note: string) => Promise<void>;
+  setPrayer: (entryId: string, prayer: string) => Promise<void>;
   todayEntries: () => PrayerLogEntry[];
 }
 
@@ -85,6 +87,19 @@ export const usePrayerStore = create<PrayerState>((set, get) => ({
       await updateNoteRemote(entryId, note);
     } catch (error) {
       console.error('Failed to save note', error);
+    }
+  },
+
+  setPrayer: async (entryId, prayer) => {
+    const log = get().log.map((entry) => (entry.id === entryId ? { ...entry, prayer } : entry));
+    set({ log });
+    try {
+      await updatePrayerTextRemote(entryId, prayer);
+    } catch (error) {
+      // Local state keeps the prayer deliberately. The user has already spent a
+      // followUp quota unit on it, so they get to read, copy and share it; it
+      // just will not survive a reload. Hiding it would waste the spend twice.
+      console.error('Failed to save prayer', error);
     }
   },
 

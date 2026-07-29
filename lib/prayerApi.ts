@@ -97,6 +97,10 @@ export async function updatePrayerNote(entryId: string, note: string): Promise<v
   await updateDoc(doc(db, 'users', requireUid(), 'prayerLog', entryId), { note });
 }
 
+export async function updatePrayerText(entryId: string, prayer: string): Promise<void> {
+  await updateDoc(doc(db, 'users', requireUid(), 'prayerLog', entryId), { prayer });
+}
+
 export async function deletePrayerEntry(entryId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', requireUid(), 'prayerLog', entryId));
 }
@@ -121,6 +125,7 @@ export async function getPrayerLog(sinceDays: number): Promise<PrayerLogEntry[]>
       loggedAt: data.loggedAt instanceof Timestamp ? data.loggedAt.toDate() : new Date(),
       localDate: data.localDate,
       note: data.note,
+      prayer: data.prayer,
     };
   });
 }

@@ -76,4 +76,6 @@ export type PrayerLogEntry = {
   /** "YYYY-MM-DD" in the user's local time. See lib/localDate.ts. */
   localDate: string
   note?: string
+  /** The AI prayer generated for this moment, when one was asked for. */
+  prayer?: string
 }
