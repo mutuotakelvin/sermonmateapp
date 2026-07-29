@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import AppText from '@/components/ui/AppText';
@@ -32,7 +32,7 @@ export default function PrayerScreen() {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { showError } = useToast();
-  const params = useLocalSearchParams<{ slotId?: string }>();
+  const params = useLocalSearchParams<{ slotId?: string; prayWithMe?: string }>();
 
   const { slots, log, streak, load, setSlots, logPrayer, setNote, setPrayer } = usePrayerStore();
   const verse = useVerseStore();
@@ -45,6 +45,22 @@ export default function PrayerScreen() {
   const [alarmWarning, setAlarmWarning] = useState(false);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Arriving from the "Pray with me" notification action. The moment is already
+  // logged by the handler in app/_layout.tsx, so all this does is open its sheet
+  // — the ref stops it reopening every time the log reloads on focus.
+  const openedFor = useRef<string | null>(null);
+  useEffect(() => {
+    const entryId = params.prayWithMe;
+    if (!entryId || openedFor.current === entryId) return;
+
+    const entry = log.find((item) => item.id === entryId);
+    if (!entry) return; // load() has not landed yet; this re-runs when it does
+
+    openedFor.current = entryId;
+    const slot = slots.find((item) => item.id === entry.slotId);
+    setSheetFor({ entry, title: slot ? `${slot.label} prayer logged` : 'Prayer logged' });
+  }, [params.prayWithMe, log, slots]);
 
   const today = localDateKey(new Date());
   const todayEntries = log.filter((entry) => entry.localDate === today);

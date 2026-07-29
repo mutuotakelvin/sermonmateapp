@@ -155,10 +155,29 @@ export default function RootLayout() {
 
     if (screen === 'prayer') {
       handledResponseId.current = id;
+      const slotId = typeof data?.slotId === 'string' ? data.slotId : null;
+
       if (action === 'LOG_PRAYER') {
-        const slotId = typeof data?.slotId === 'string' ? data.slotId : null;
         usePrayerStore.getState().logPrayer(slotId).catch(() => {});
+        router.push('/(protected)/prayer' as never);
+        return;
       }
+
+      if (action === 'PRAY_WITH_ME') {
+        // Log the moment now, then hand the entry to the screen so it can open
+        // that entry's sheet with the button ready. Generation costs a followUp
+        // quota unit, so it waits for a deliberate tap rather than firing off a
+        // notification tap that is easy to hit half-asleep.
+        usePrayerStore.getState().logPrayer(slotId)
+          .then((entry) => {
+            router.push(
+              (entry ? `/(protected)/prayer?prayWithMe=${entry.id}` : '/(protected)/prayer') as never,
+            );
+          })
+          .catch(() => router.push('/(protected)/prayer' as never));
+        return;
+      }
+
       router.push('/(protected)/prayer' as never);
     }
   }, [lastNotificationResponse, router, isAuthenticated, isLoading]);
