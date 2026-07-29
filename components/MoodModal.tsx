@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   ScrollView,
@@ -257,7 +258,13 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
         transparent={true}
         onRequestClose={onClose}
       >
-        <View style={styles.modalOverlay}>
+        {/*
+          KeyboardAvoidingView, not View: the "share what's on your heart" field
+          sits at the bottom of the confirm step, and an edge-to-edge window is
+          not resized for the IME, so without this the keyboard covers the field
+          the user is typing into.
+        */}
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
           <Pressable style={styles.backdrop} onPress={onClose} />
 
           {/* Step 2: Bold full-color confirm screen */}
@@ -279,6 +286,7 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 {/* Big mood face + name + date */}
                 <View style={styles.confirmHero}>
@@ -409,6 +417,7 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 {/* Step 1: Mood Selection */}
                 {step === 1 && (
@@ -453,7 +462,7 @@ export default function MoodModal({ visible, onClose, onComplete }: MoodModalPro
               )}
             </View>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Sermon Modal for displaying result */}

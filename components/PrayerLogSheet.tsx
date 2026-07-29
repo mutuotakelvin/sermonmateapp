@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import AppText from '@/components/ui/AppText';
 import PrimaryButton from '@/components/ui/PrimaryButton';
@@ -41,7 +41,19 @@ export default function PrayerLogSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={done}>
       <Pressable style={styles.backdrop} onPress={done} accessibilityLabel="Close" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/*
+        'padding' on BOTH platforms. It used to be iOS-only, with undefined on
+        Android — and undefined makes KeyboardAvoidingView an inert View, so the
+        sheet sat behind the keyboard: you could not see what you were typing,
+        nor reach Done or "Pray with me".
+
+        Android used to get away with it because adjustResize shrank the window.
+        The app is edge-to-edge (app.config.js) on targetSdk 36, and an
+        edge-to-edge window is NOT resized for the IME, so the sheet has to move
+        itself. 'padding' is driven by keyboard events rather than the native
+        window mode, so it works regardless.
+      */}
+      <KeyboardAvoidingView behavior="padding">
         <View style={styles.sheet}>
           <View style={styles.grabber} />
           <AppText variant="title" style={styles.title}>{title}</AppText>

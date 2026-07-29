@@ -2,7 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import AppText from '@/components/ui/AppText';
 import PrayerLogSheet from '@/components/PrayerLogSheet';
@@ -276,6 +276,10 @@ export default function PrayerScreen() {
       <Modal visible={!!editing} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
         <Pressable style={styles.backdrop} onPress={() => setEditing(null)} />
         {editing && (
+          // Same reason as PrayerLogSheet: edge-to-edge windows are not resized
+          // for the keyboard, so a bottom-anchored sheet must lift itself or the
+          // name field ends up behind the IME.
+          <KeyboardAvoidingView behavior="padding">
           <View style={styles.sheet}>
             <View style={styles.grabber} />
             <AppText variant="title">Prayer time</AppText>
@@ -311,6 +315,7 @@ export default function PrayerScreen() {
               <AppText variant="label" style={styles.danger}>Delete this time</AppText>
             </Pressable>
           </View>
+          </KeyboardAvoidingView>
         )}
       </Modal>
 
