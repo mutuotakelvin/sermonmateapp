@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AppText from '@/components/ui/AppText';
 import Screen from '@/components/ui/Screen';
+import PrayerActions from '@/components/PrayerActions';
 import { localDateKey } from '@/lib/localDate';
+import { momentsFor } from '@/lib/prayerMoments';
 import { computeBestStreak } from '@/lib/prayerStreak';
 import { usePrayerStore } from '@/lib/stores/prayer';
 import { useTheme, type AppTheme } from '@/lib/theme';
@@ -20,6 +22,8 @@ export default function PrayerHistoryScreen() {
 
   // Offset in months from the current one; 0 is this month, -1 last month.
   const [monthOffset, setMonthOffset] = useState(0);
+  // Which prayer is expanded. One at a time — the list is for skimming.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -47,7 +51,11 @@ export default function PrayerHistoryScreen() {
   const monthKeys = cells.filter(Boolean) as string[];
   const daysPrayedThisMonth = monthKeys.filter((key) => countFor(key) > 0).length;
 
-  const noted = log.filter((entry) => entry.note).slice(0, 10);
+  // Entries carrying something worth re-reading — a note, a prayer, or both.
+  const moments = useMemo(() => momentsFor(log, 10), [log]);
+
+  const slotLabel = (slotId: string | null) =>
+    slots.find((slot) => slot.id === slotId)?.label ?? 'Prayer';
 
   return (
     <Screen>
@@ -172,15 +180,39 @@ export default function PrayerHistoryScreen() {
           </View>
         )}
 
-        {noted.length > 0 && (
+        {moments.length > 0 && (
           <>
-            <AppText variant="label" style={styles.sectionLabel}>Recent notes</AppText>
-            {noted.map((entry) => (
+            <AppText variant="label" style={styles.sectionLabel}>Recent moments</AppText>
+            {moments.map((entry) => (
               <View key={entry.id} style={styles.noteCard}>
                 <AppText variant="caption">
                   {entry.loggedAt.toLocaleDateString([], { day: 'numeric', month: 'short' })}
+                  {' · '}
+                  {slotLabel(entry.slotId)}
                 </AppText>
-                <AppText variant="body">{entry.note}</AppText>
+
+                {!!entry.note && <AppText variant="body">{entry.note}</AppText>}
+
+                {!!entry.prayer && (
+                  <>
+                    <Pressable
+                      onPress={() => setExpandedId((id) => (id === entry.id ? null : entry.id))}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        expandedId === entry.id ? 'Collapse prayer' : 'Expand prayer'
+                      }
+                    >
+                      <AppText
+                        variant="verse"
+                        style={styles.prayerText}
+                        numberOfLines={expandedId === entry.id ? undefined : 3}
+                      >
+                        {entry.prayer}
+                      </AppText>
+                    </Pressable>
+                    <PrayerActions text={entry.prayer} />
+                  </>
+                )}
               </View>
             ))}
           </>
@@ -256,4 +288,5 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
     padding: theme.space.md,
     marginBottom: theme.space.sm,
   },
+  prayerText: { marginTop: theme.space.xs },
 });
