@@ -21,7 +21,7 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.sermonmate.app",
-      versionCode: 18,
+      versionCode: 19,
       permissions: [
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
