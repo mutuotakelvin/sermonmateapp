@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import AppText from '@/components/ui/AppText';
+import PrayerActions from '@/components/PrayerActions';
 import PrayerLogSheet from '@/components/PrayerLogSheet';
 import PrayerSlotRow from '@/components/PrayerSlotRow';
 import PrimaryButton from '@/components/ui/PrimaryButton';
@@ -33,7 +34,7 @@ export default function PrayerScreen() {
   const { showError } = useToast();
   const params = useLocalSearchParams<{ slotId?: string }>();
 
-  const { slots, log, streak, load, setSlots, logPrayer, setNote } = usePrayerStore();
+  const { slots, log, streak, load, setSlots, logPrayer, setNote, setPrayer } = usePrayerStore();
   const verse = useVerseStore();
 
   const [editing, setEditing] = useState<PrayerSlot | null>(null);
@@ -94,9 +95,17 @@ export default function PrayerScreen() {
   };
 
   const handlePrayWithMe = async () => {
+    // Capture the entry BEFORE anything clears the sheet. The old order cleared
+    // sheetFor first and then had nowhere to put the text, so every generated
+    // prayer was discarded the moment "Amen" was tapped — along with the
+    // followUp quota unit it cost.
+    const entryId = sheetFor?.entry.id;
+    if (!entryId) return;
+
     setPraying(true);
     try {
       const text = await generatePrayer('A moment of prayer during my daily prayer time.');
+      await setPrayer(entryId, text);
       setSheetFor(null);
       setGeneratedPrayer(text);
     } catch (error: any) {
@@ -330,6 +339,9 @@ export default function PrayerScreen() {
           <View style={styles.grabber} />
           <AppText variant="title">A prayer for now</AppText>
           <AppText variant="verse" style={styles.prayerText}>{generatedPrayer}</AppText>
+          {!!generatedPrayer && <PrayerActions text={generatedPrayer} />}
+          {/* "Amen" is a dismiss, not a discard — the prayer was saved before
+              this modal appeared. */}
           <PrimaryButton label="Amen" onPress={() => setGeneratedPrayer(null)} />
         </View>
       </Modal>
