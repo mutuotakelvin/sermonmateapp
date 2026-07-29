@@ -65,9 +65,18 @@ export async function requestVersePermission(): Promise<boolean> {
  * reminders for this pass rather than blocking the verse reminder entirely.
  */
 export async function rescheduleDailyVerse(settings: ReminderSettings): Promise<ReminderStatus> {
-  const slots = await getPrayerSlots().catch((error) => {
-    console.warn('Could not read prayer slots while re-arming reminders', error);
-    return [];
-  });
+  let slots;
+  try {
+    slots = await getPrayerSlots();
+  } catch (error) {
+    // Unknown is NOT the same as none. Re-arming cancels the whole schedule and
+    // rebuilds it, so continuing with an empty list would silently delete every
+    // prayer reminder — and this path is hit on every cold start, because the
+    // app-foreground top-up races Firebase auth restoring the session.
+    // Leave the existing schedule alone; the next call (post sign-in, or the
+    // prayer screen after an edit) arms it properly.
+    console.warn('Skipping reminder re-arm: prayer slots unavailable', error);
+    return 'ok';
+  }
   return rearmAllSerialized(settings, slots);
 }

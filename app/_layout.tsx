@@ -103,7 +103,9 @@ export default function RootLayout() {
   }, [initializeVerseSettings]);
 
   useEffect(() => {
-    if (!initialized) return;
+    // Wait for auth as well as settings: prayer slots live in Firestore, and
+    // arming before the session is restored means arming without them.
+    if (!initialized || !authUserId) return;
 
     const topUp = () => {
       const { reminderEnabled, reminderHour, reminderMinute, translation } =
@@ -116,7 +118,7 @@ export default function RootLayout() {
       if (state === 'active') topUp();
     });
     return () => sub.remove();
-  }, [initialized]);
+  }, [initialized, authUserId]);
 
   // Route notification taps (cold start and background) to the right screen, and
   // handle the prayer reminder's inline actions.
