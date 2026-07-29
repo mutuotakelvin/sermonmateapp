@@ -22,6 +22,7 @@ import { splitVerseString } from '@/lib/cards';
 import { saveSermon as saveSermonApi, updateSermon } from '@/lib/sermonApi';
 import { generateStory } from '@/lib/sermonAi';
 import { generatePrayer } from '@/lib/prayerAi';
+import ListenButton from '@/components/ListenButton';
 import { useTheme, type AppTheme } from '@/lib/theme';
 import type { SavedSermon, Sermon } from '@/lib/types';
 
@@ -269,6 +270,14 @@ export default function SermonModal({
               </View>
               <AppText variant="body" style={styles.messageBody}>{displaySermon.interpretation}</AppText>
 
+              {/* Reads the whole reflection — message, then story and prayer if
+                  they exist — so listening doesn't mean tapping three buttons. */}
+              <ListenButton
+                text={[displaySermon.interpretation, story, prayer].filter(Boolean).join('\n\n')}
+                label="Listen"
+                style={styles.listen}
+              />
+
               {/* SCRIPTURE — verses as inline cards, each individually copyable */}
               <View style={styles.sectionHeadRow}>
                 <AppText variant="label">Scripture</AppText>
@@ -411,6 +420,7 @@ const makeStyles = (theme: AppTheme) => StyleSheet.create({
   },
   copyAll: { color: theme.color.accent },
   messageBody: { lineHeight: 24 },
+  listen: { marginTop: theme.space.md },
   generateBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: theme.space.sm, marginTop: theme.space.xl,

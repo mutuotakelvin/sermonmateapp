@@ -13,6 +13,7 @@ import { openExactAlarmSettings, rescheduleDailyVerse } from '@/lib/notification
 import type { ReminderStatus } from '@/lib/notifications';
 import { useTheme, type AppTheme } from '@/lib/theme';
 import { timeOfDay } from '@/lib/time';
+import ListenButton from '@/components/ListenButton';
 import { useVerseStore } from '@/lib/stores/verse';
 import { bundledVerseSource, formatVerseForShare } from '@/lib/verses';
 import type { Translation } from '@/lib/verseData';
@@ -116,6 +117,11 @@ export default function VerseScreen() {
             <Pressable onPress={handleCopy} style={styles.actionButton} hitSlop={4}>
               <Ionicons name="copy-outline" size={22} color={theme.color.onCharcoal} />
             </Pressable>
+            <ListenButton
+              variant="icon"
+              tint={theme.color.onCharcoal}
+              text={`${verse.text[translation]} — ${verse.reference}`}
+            />
             <Pressable onPress={handleCreateCard} style={styles.actionButton} hitSlop={4}>
               <Ionicons name="image-outline" size={22} color={theme.color.text} />
             </Pressable>
