@@ -50,12 +50,21 @@ export default function PrayerScreen() {
   const ordered = [...slots].sort((a, b) => minutesOfDay(a) - minutesOfDay(b));
   const enabledCount = ordered.filter((slot) => slot.enabled).length;
 
+  // One definition of "done today", shared by the header count, the next-slot
+  // marker and each row. Counting raw entries instead let the numerator exceed
+  // the denominator — two logs against one slot read as "5 of 4". Same defect as
+  // the home row (f4969bc); this screen had its own copy of it.
+  const isDone = (slot: PrayerSlot) =>
+    todayEntries.some((entry) => entry.slotId === slot.id);
+
+  const doneCount = ordered.filter((slot) => slot.enabled && isDone(slot)).length;
+
   // The enabled slot nearest to now that hasn't been logged — a quiet "you're up",
   // never a nag.
   const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
   const nextSlot = ordered.find(
     (slot) => slot.enabled
-      && !todayEntries.some((entry) => entry.slotId === slot.id)
+      && !isDone(slot)
       && minutesOfDay(slot) >= nowMinutes,
   );
 
@@ -194,7 +203,7 @@ export default function PrayerScreen() {
         {ordered.length > 0 && (
           <AppText variant="label" style={styles.sectionLabel}>
             {enabledCount > 0
-              ? `Today · ${todayEntries.filter((e) => e.slotId).length} of ${enabledCount}`
+              ? `Today · ${doneCount} of ${enabledCount}`
               : 'Today'}
           </AppText>
         )}
