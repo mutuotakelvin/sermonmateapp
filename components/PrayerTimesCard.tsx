@@ -6,6 +6,7 @@ import AppText from '@/components/ui/AppText';
 import { localDateKey } from '@/lib/localDate';
 import { usePrayerStore } from '@/lib/stores/prayer';
 import { useTheme, type AppTheme } from '@/lib/theme';
+import type { PrayerSlot } from '@/lib/types';
 
 /**
  * Home-screen row. Answers "where am I today?" without a tap, and says nothing
@@ -39,14 +40,22 @@ export default function PrayerTimesCard({ onPress }: { onPress: () => void }) {
   const ordered = [...enabled].sort(
     (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
   );
+  // One definition of "done", shared by the count, the next-slot marker and the
+  // dots. The count used to be todayEntries.length, which counts raw entries —
+  // repeat logs against one slot, and ad-hoc logs carrying slotId: null, each
+  // added one. That read "8 of 4 today" against three filled dots.
+  const isDone = (slot: PrayerSlot) =>
+    todayEntries.some((entry) => entry.slotId === slot.id);
+
   const nextSlot = ordered.find(
-    (slot) => !todayEntries.some((entry) => entry.slotId === slot.id)
-      && slot.hour * 60 + slot.minute >= nowMinutes,
+    (slot) => !isDone(slot) && slot.hour * 60 + slot.minute >= nowMinutes,
   );
 
+  const doneCount = ordered.filter(isDone).length;
+
   const subtitle = streak.current > 0
-    ? `${todayEntries.length} of ${enabled.length} today · ${streak.current} day streak`
-    : `${todayEntries.length} of ${enabled.length} today`;
+    ? `${doneCount} of ${enabled.length} today · ${streak.current} day streak`
+    : `${doneCount} of ${enabled.length} today`;
 
   return (
     <Pressable onPress={onPress} style={styles.card} accessibilityRole="button">
@@ -56,7 +65,7 @@ export default function PrayerTimesCard({ onPress }: { onPress: () => void }) {
       </View>
       <View style={styles.dots}>
         {ordered.map((slot) => {
-          const done = todayEntries.some((entry) => entry.slotId === slot.id);
+          const done = isDone(slot);
           return (
             <View
               key={slot.id}
