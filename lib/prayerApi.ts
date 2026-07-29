@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -61,19 +60,37 @@ export async function savePrayerSlots(slots: PrayerSlot[]): Promise<void> {
   await setDoc(configDoc(), { slots, updatedAt: serverTimestamp() }, { merge: true });
 }
 
-export async function logPrayer(input: {
+/**
+ * Mint the entry locally and START the write. Never wait for the server.
+ *
+ * `addDoc()` resolves only once the backend acknowledges the write, so awaiting
+ * it meant that in aeroplane mode "I prayed" did nothing at all — no sheet, no
+ * tick, no record, and nothing after reconnecting either. `doc()` generates the
+ * id client-side, so the entry is complete before the network is involved and
+ * the UI can show it immediately.
+ *
+ * `committed` is returned for observability only. Callers must not block
+ * rendering on it: offline it stays pending until the connection returns.
+ */
+export function logPrayer(input: {
   slotId: string | null;
   note?: string;
-}): Promise<PrayerLogEntry> {
+}): { entry: PrayerLogEntry; committed: Promise<void> } {
   const now = new Date();
   const localDate = localDateKey(now);
-  const ref = await addDoc(logCollection(), {
+  const ref = doc(logCollection());
+
+  const committed = setDoc(ref, {
     slotId: input.slotId,
     localDate,
     loggedAt: serverTimestamp(),
     ...(input.note ? { note: input.note } : {}),
   });
-  return { id: ref.id, slotId: input.slotId, loggedAt: now, localDate, note: input.note };
+
+  return {
+    entry: { id: ref.id, slotId: input.slotId, loggedAt: now, localDate, note: input.note },
+    committed,
+  };
 }
 
 export async function updatePrayerNote(entryId: string, note: string): Promise<void> {

@@ -62,9 +62,15 @@ export const usePrayerStore = create<PrayerState>((set, get) => ({
 
   logPrayer: async (slotId, note) => {
     try {
-      const entry = await logPrayerRemote({ slotId, note });
+      const { entry, committed } = logPrayerRemote({ slotId, note });
       const log = [entry, ...get().log];
       set({ log, streak: recompute(log) });
+
+      // Deliberately NOT awaited. Offline this stays queued inside the Firestore
+      // client and flushes on reconnect; awaiting it is what made "I prayed" a
+      // silent no-op in aeroplane mode.
+      committed.catch((error) => console.error('Prayer log write failed', error));
+
       return entry;
     } catch (error) {
       console.error('Failed to log prayer', error);
